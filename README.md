@@ -1,5 +1,4 @@
 # Bachelor Project LARA Personal Information
-## Advancing Combinator Parsing in Scala
 
 Title : `Advancing Combinator Parsing in Scala`
 ===============================================
