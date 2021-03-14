@@ -1,22 +1,25 @@
 package ast
 
-sealed trait Expr[A]:
-    lazy val eval:A
+type UpExpr = Expr | Int
 
-type Num = Int
+trait Expr:
+   def eval:Int
 
-case class Const(x: Num) extends Expr[Num]:
-    lazy val eval: Num = x
-    override def toString = x.toString
+object Const:
+   transparent inline def apply(inline i : Int) : Int = i
 
-abstract class BinOp(left:Expr[Num], right:Expr[Num], f:(Num,Num) => Num) extends Expr[Num] :
-    lazy val eval: Num = f(left.eval,right.eval)
-    
-case class Plus(left:Expr[Num], right:Expr[Num]) extends BinOp(left, right,_+_):
-    override def toString = s"($left + $right)"
-case class Minus(left:Expr[Num], right:Expr[Num]) extends BinOp(left, right,_-_):
-    override def toString = s"($left - $right)"
-case class Times(left:Expr[Num], right:Expr[Num]) extends BinOp(left, right,_*_):
-    override def toString = s"($left * $right)"
-case class Div(left:Expr[Num], right:Expr[Num]) extends BinOp(left, right,_/_):
-    override def toString = s"($left / $right)"
+case class FinalConst(i: Int) extends Expr:
+   def eval = i
+
+case class Var(name: String, value: Expr) extends Expr:
+   def eval = value.eval
+object Var:
+   def apply(name: String, value: Int) = new Var(name,FinalConst(value))
+
+case class Plus(left : Expr, right: Expr):
+   def eval = left.eval + right.eval
+object Plus:
+   def apply(l : Expr, r: Expr) = new Plus(l,r)
+   def apply(l : Expr, r: Int) = new Plus(l,FinalConst(r))
+   def apply(l : Int, r: Expr) = new Plus(FinalConst(l),r)
+   transparent inline def apply(inline l: Int, inline r: Int) = l + r
