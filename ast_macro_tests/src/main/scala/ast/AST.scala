@@ -1,6 +1,6 @@
 package ast
 
-type UpExpr = Expr | Int
+// type UpExpr = Expr | Int
 
 trait Expr:
    def eval:Int
