@@ -1,14 +1,19 @@
 import ast._
-
+import scala.io.StdIn.readInt
 @main def hello: Unit = {
     println("Hello world!")
-    println(tree)
-    println(tree.eval)
+    println(nb)
     println("finsihed")
 }
 
-def tree = 
+
+val nb:6 = eval(tree)
+
+transparent inline def tree = 
     Plus(
-        Var("two",Const(1)),
-        Const(1)
+        Const(1),
+        Plus(
+            Const(2),
+            Const(3)
+        )
     )

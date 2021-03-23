@@ -1,25 +1,21 @@
 package ast
 
-type UpExpr = Expr | Int
 
-trait Expr:
-   def eval:Int
+import scala.quoted._
+import scala.quoted.Quotes
 
-object Const:
-   transparent inline def apply(inline i : Int) : Int = i
+trait Exp
 
-case class FinalConst(i: Int) extends Expr:
-   def eval = i
+case class Const(v: Int) extends Exp
+case class Plus(left: Exp, right: Exp) extends Exp
 
-case class Var(name: String, value: Expr) extends Expr:
-   def eval = value.eval
-object Var:
-   def apply(name: String, value: Int) = new Var(name,FinalConst(value))
 
-case class Plus(left : Expr, right: Expr):
-   def eval = left.eval + right.eval
-object Plus:
-   def apply(l : Expr, r: Expr) = new Plus(l,r)
-   def apply(l : Expr, r: Int) = new Plus(l,FinalConst(r))
-   def apply(l : Int, r: Expr) = new Plus(FinalConst(l),r)
-   transparent inline def apply(inline l: Int, inline r: Int) = l + r
+transparent inline def eval(inline x: Exp) = ${ evaluate('{x}) }
+def evaluate(expr: Expr[Exp])(using Quotes):Expr[Int] = 
+    import quotes.reflect.*
+    expr match
+        case '{Const($x)} => x
+        case '{Plus($x,$y)} => '{${evaluate(x)} + ${evaluate(y)}}
+        //case '{Plus($x,$y)} => '{${evaluate(x)} + ${evaluate(y)}}
+
+    
