@@ -1,23 +1,42 @@
 package syntax
 
-import TokensAndKinds._
 
-object Syntaxes:
+import scala.annotation._
+
+trait Syntaxes:
+
+  type RecUID = Long
+
+  type Token
+
+  type Kind
+
+  def getKind(t: Token): Kind
+
+  def accept[A](k:Kind)(f: PartialFunction[Token,A]) = elem(k).map(f)
 
   def epsilon[A](e: A) = Success(e)
   
-  def elem(t: Token) = Elem(getKind(t))
+  def elem(k: Kind) = Elem(k)
 
   sealed trait Syntax[A]:
+
     /**
      * If the syntax is nullable
      */
-    lazy val isNullable: Boolean
+    lazy val nullable: Option[A]
+
+    
+    lazy val isNullable = nullable.nonEmpty
+
+
+    lazy val first = computeFirst()
 
     /**
      * The first set of this syntax
      */
-    lazy val first: Set[Kind]
+
+    def computeFirst(visited: Set[RecUID] = Set(), acc: Set[Kind] = Set()):Set[Kind]
 
     /**
      * The Should-Not-Follow set of this syntax 
@@ -52,12 +71,18 @@ object Syntaxes:
         case (Failure(),_) => Failure()
         case (_, Failure()) => Failure()
         case _ => Sequence(this, that)
-  
+
+    /**
+     * Map this syntax to another
+     */
+    def map[B](f: A => B): Syntax[B] =
+      Transform(this, f)
+
 
   case class Success[A](value: A) extends Syntax[A]:
-    lazy val isNullable = true
+    lazy val nullable = Some(value)
 
-    lazy val first = Set()
+    def computeFirst(visited: Set[RecUID], acc: Set[Kind] = Set()) = acc
 
     lazy val snf = Set()
 
@@ -65,9 +90,9 @@ object Syntaxes:
   
 
   case class Failure[A]() extends Syntax[A]:
-    lazy val isNullable = true
+    lazy val nullable = None
 
-    lazy val first = Set()
+    def computeFirst(visited: Set[RecUID], acc: Set[Kind] = Set()) = acc
 
     lazy val snf = Set()
 
@@ -75,9 +100,9 @@ object Syntaxes:
   
 
   case class Elem(e: Kind) extends Syntax[Token]:
-    lazy val isNullable = false
+    lazy val nullable = None
 
-    lazy val first = Set(e)
+    def computeFirst(visited: Set[RecUID], acc: Set[Kind] = Set()) = acc + e
 
     lazy val snf = Set()
 
@@ -85,9 +110,10 @@ object Syntaxes:
 
 
   case class Transform[A,B](inner: Syntax[A],f : A => B) extends Syntax[B]:
-    lazy val isNullable = inner.isNullable
+    lazy val nullable = inner.nullable.map(f)
 
-    lazy val first = inner.first
+    def computeFirst(visited: Set[RecUID], acc: Set[Kind] = Set()) = 
+      inner.computeFirst(visited, acc)
 
     lazy val snf = inner.snf
 
@@ -95,9 +121,10 @@ object Syntaxes:
   
 
   case class Sequence[A, B](left: Syntax[A], right: Syntax[B]) extends Syntax[(A, B)]:
-    lazy val isNullable = left.isNullable && right.isNullable
+    lazy val nullable = left.nullable.flatMap( ln => right.nullable.map(rn => (ln, rn)) )
 
-    lazy val first = (if(right.isProductive) then left.first else Set()) ++ (if(left.isNullable) then right.first else Set())
+    def computeFirst(visited: Set[RecUID], acc: Set[Kind] = Set()) =
+      (if(right.isProductive) then left.first else Set()) ++ (if(left.isNullable) then right.first else Set())
 
     lazy val snf = 
       (if(right.isNullable) then left.snf else Set()) ++
@@ -110,9 +137,10 @@ object Syntaxes:
   
 
   case class Disjunction[A](left: Syntax[A], right: Syntax[A]) extends Syntax[A]:
-    lazy val isNullable = left.isNullable || right.isNullable
+    lazy val nullable = left.nullable.orElse(right.nullable)
 
-    lazy val first = left.first ++ right.first
+    def computeFirst(visited: Set[RecUID], acc: Set[Kind] = Set()) =
+      left.computeFirst(visited, right.computeFirst(visited,acc))
 
     lazy val snf =
       left.snf ++
@@ -128,13 +156,17 @@ object Syntaxes:
 
 
   class Recursive[A](syntax: => Syntax[A]) extends Syntax[A]:
-    lazy val isNullable = ???
 
-    lazy val first = ???
+    val uid = Recursive.nextId
 
-    lazy val snf = ???
+    lazy val nullable = inner.nullable
 
-    lazy val hasConflict = ???
+    def computeFirst(visited: Set[RecUID], acc: Set[Kind] = Set()) =
+      inner.computeFirst(visited + uid, acc)
+
+    lazy val snf = inner.snf
+
+    lazy val hasConflict = inner.hasConflict
     
     val id = Recursive.nextId
 

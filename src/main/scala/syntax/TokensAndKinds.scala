@@ -10,7 +10,6 @@ object TokensAndKinds:
   
   case class IntLitToken(value: Int) extends Token
   
-  
   sealed trait Kind
   
   case object IntKind extends Kind
