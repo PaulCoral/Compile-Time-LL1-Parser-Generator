@@ -5,8 +5,7 @@ import syntax.TokensAndKinds.Kind._
 
 @main def hello: Unit = {
     println("Hello world!")
-    println(Parser.rec_test)
-    println(Parser.rec_test.first)
+    println(Parser.manyAs.first)
     println("finsihed")
 }
 
@@ -25,3 +24,5 @@ object Parser extends Syntaxes:
     lazy val var_or_litteral = elemInt | epsilon(0)
 
     lazy val rec_test: Syntax[Int] = recursive{ (elemInt ~>~ rec_test) | epsilon(0) }
+
+    lazy val manyAs: Syntax[Unit] = recursive { epsilon(()) | elem(IntKind) ~>~ manyAs }

@@ -136,8 +136,6 @@ trait Syntaxes:
 
     lazy val hasConflict:Boolean = false
   
-    
-
 
   /**
    * Transformation by applying a function on the result of a successful parsing
@@ -185,7 +183,6 @@ trait Syntaxes:
     lazy val nullable: Option[A] = left.nullable.orElse(right.nullable)
 
     def computeFirst(visited: Set[RecUID], acc: Set[Kind] = Set()) =
-      println("here dis")
       left.computeFirst(visited, right.computeFirst(visited,acc))
 
     lazy val snf: Set[Kind] =
@@ -207,24 +204,21 @@ trait Syntaxes:
   /**
    * Recursive construction of a syntaxs
    */
-  class Recursive[A](syntax: => Syntax[A], val uid: RecUID) extends Syntax[A]:
+  class Recursive[A](syntax: => Syntax[A], val rid: RecUID) extends Syntax[A]:
 
     lazy val nullable: Option[A] = inner.nullable
 
     def computeFirst(visited: Set[RecUID], acc: Set[Kind] = Set()) =
-      println("here1")
-      if visited.contains(this.uid) then
-        println("here2")
+      if visited.contains(this.rid) then
         acc
       else
-        println("here3")
-        inner.computeFirst(visited + uid, acc)
+        inner.computeFirst(visited + rid, acc)
 
     def computeProductive(visited: Set[RecUID]): Boolean =
-      if visited.contains(uid) then
+      if visited.contains(rid) then
         true
       else
-        computeProductive(visited + uid)
+        computeProductive(visited + rid)
 
     lazy val snf: Set[Kind] = inner.snf
 
@@ -238,10 +232,10 @@ trait Syntaxes:
       }
       else {
         val that = other.asInstanceOf[Recursive[_]]
-        this.uid == that.uid
+        this.rid == that.rid
       }
 
-    override def hashCode(): Int = uid.hashCode
+    override def hashCode(): Int = rid.hashCode
 
 
   object Recursive:
@@ -257,7 +251,7 @@ trait Syntaxes:
     def unapply[A](that: Syntax[A]): Option[(Syntax[A], RecUID)] = 
       if(that.isInstanceOf[Recursive[_]])
         val asRec = that.asInstanceOf[Recursive[A]]
-        Some((asRec.inner,asRec.uid))
+        Some((asRec.inner,asRec.rid))
       else
         None
       
