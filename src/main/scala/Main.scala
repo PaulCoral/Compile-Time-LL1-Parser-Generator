@@ -1,8 +1,11 @@
 import syntax.Syntaxes
 import syntax.TokensAndKinds._
+import syntax.TokensAndKinds.Token._
+import syntax.TokensAndKinds.Kind._
 
 @main def hello: Unit = {
     println("Hello world!")
+    println(Parser.var_assignation)
     println("finsihed")
 }
 
@@ -14,8 +17,10 @@ object Parser extends Syntaxes:
 
     lazy val elemInt: Syntax[Int] = accept(IntKind){ case IntLitToken(v) => v }
 
-    lazy val from_1_to_2 = elemInt ~ elemInt
+    lazy val elemId: Syntax[String] = accept(IdentifierKind){ case IdentifierToken(v) => v }
 
-    lazy val choose_1_or_2 = elemInt | elemInt
+    lazy val var_assignation = elemId ~ elemInt
 
-    lazy val choose_1_or_2_or_none = elemInt | epsilon(0)
+    lazy val var_or_litteral = elemInt | epsilon(0)
+
+    lazy val rec_test = recursive{ elemInt | epsilon(0) }

@@ -6,15 +6,20 @@ package syntax
  */
 
 object TokensAndKinds:
-  sealed trait Token
+
+  enum Token:
+    case IntLitToken(value: Int)
+    case IdentifierToken(id : String)
   
-  case class IntLitToken(value: Int) extends Token
-  
-  sealed trait Kind
-  
-  case object IntKind extends Kind
+  enum Kind:
+    case IntKind
+    case IdentifierKind
 
   
-  def getKind(t: Token): Kind = t match
-    case IntLitToken(_) => IntKind
+  def getKind(t: Token): Kind = 
+    import Token._
+    import Kind._
+    t match
+      case IntLitToken(_) => IntKind
+      case IdentifierToken(_) => IdentifierKind
   

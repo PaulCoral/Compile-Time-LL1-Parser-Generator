@@ -13,11 +13,13 @@ trait Syntaxes:
 
   def getKind(t: Token): Kind
 
-  def accept[A](k:Kind)(f: PartialFunction[Token,A]) = elem(k).map(f)
+  def accept[A](k:Kind)(f: PartialFunction[Token,A]): Syntax[A] = elem(k).map(f)
 
-  def epsilon[A](e: A) = Success(e)
+  def epsilon[A](e: A): Syntax[A] = Success(e)
   
-  def elem(k: Kind) = Elem(k)
+  def elem(k: Kind): Syntax[Token] = Elem(k)
+
+  def recursive[A](syntax: => Syntax[A]): Syntax[A] = Recursive(syntax)
 
   sealed trait Syntax[A]:
 
@@ -56,7 +58,7 @@ trait Syntaxes:
     /**
      * Disjunction operator
      */
-    def |(that: Syntax[A]):Syntax[A] = 
+    infix def |(that: Syntax[A]):Syntax[A] = 
       (this, that) match
         case (Failure(), _) => that
         case (_,Failure()) => this
@@ -66,7 +68,7 @@ trait Syntaxes:
     /**
      * Sequence operator
      */
-    def ~[B](that: Syntax[B]):Syntax[(A,B)] = 
+    infix def ~[B](that: Syntax[B]):Syntax[(A,B)] = 
       (this, that) match
         case (Failure(),_) => Failure()
         case (_, Failure()) => Failure()
