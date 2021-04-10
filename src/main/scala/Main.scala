@@ -5,7 +5,8 @@ import syntax.TokensAndKinds.Kind._
 
 @main def hello: Unit = {
     println("Hello world!")
-    println(Parser.var_assignation)
+    println(Parser.rec_test)
+    println(Parser.rec_test.first)
     println("finsihed")
 }
 
@@ -19,8 +20,8 @@ object Parser extends Syntaxes:
 
     lazy val elemId: Syntax[String] = accept(IdentifierKind){ case IdentifierToken(v) => v }
 
-    lazy val var_assignation = elemId ~ elemInt
+    lazy val var_assignation = elemId ~>~ elemInt
 
     lazy val var_or_litteral = elemInt | epsilon(0)
 
-    lazy val rec_test = recursive{ elemInt | epsilon(0) }
+    lazy val rec_test: Syntax[Int] = recursive{ (elemInt ~>~ rec_test) | epsilon(0) }

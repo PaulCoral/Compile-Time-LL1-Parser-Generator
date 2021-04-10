@@ -40,6 +40,8 @@ trait Syntaxes:
 
     def computeFirst(visited: Set[RecUID] = Set(), acc: Set[Kind] = Set()):Set[Kind]
 
+    def computeProductive(visited: Set[RecUID] = Set()): Boolean
+
     /**
      * The Should-Not-Follow set of this syntax 
      */
@@ -53,7 +55,7 @@ trait Syntaxes:
     /**
      * If this syntax is productive
      */
-    lazy val isProductive: Boolean
+    lazy val isProductive: Boolean = computeProductive()
 
     /**
      * Disjunction operator
@@ -75,6 +77,15 @@ trait Syntaxes:
         case _ => Sequence(this, that)
 
     /**
+     * Sequence operator
+     */
+    infix def ~>~[B](that: Syntax[B]):Syntax[B] = 
+      (this, that) match
+        case (Failure(),_) => Failure()
+        case (_, Failure()) => Failure()
+        case _ => Sequence(this, that).map{_._2}
+
+    /**
      * Map this syntax to another
      */
     def map[B](f: A => B): Syntax[B] =
@@ -88,11 +99,11 @@ trait Syntaxes:
 
     def computeFirst(visited: Set[RecUID], acc: Set[Kind] = Set()) = acc
 
+    def computeProductive(visited: Set[RecUID]): Boolean = true
+
     lazy val snf: Set[Kind] = Set()
 
     lazy val hasConflict: Boolean = false
-
-    lazy val isProductive: Boolean = true
   
 
   /**
@@ -103,11 +114,11 @@ trait Syntaxes:
 
     def computeFirst(visited: Set[RecUID], acc: Set[Kind] = Set()) = acc
 
+    def computeProductive(visited: Set[RecUID]): Boolean = false
+
     lazy val snf: Set[Kind] = Set()
 
     lazy val hasConflict:Boolean = false
-
-    lazy val isProductive: Boolean = false
   
 
   /**
@@ -118,11 +129,14 @@ trait Syntaxes:
 
     def computeFirst(visited: Set[RecUID], acc: Set[Kind] = Set()) = acc + e
 
-    lazy val snf: Set[Kind] = Set()
+    def computeProductive(visited: Set[RecUID]): Boolean = true
+
+    lazy val snf: Set[Kind] = 
+      Set()
 
     lazy val hasConflict:Boolean = false
   
-    lazy val isProductive: Boolean = true
+    
 
 
   /**
@@ -138,7 +152,7 @@ trait Syntaxes:
 
     lazy val hasConflict:Boolean = inner.hasConflict
 
-    lazy val isProductive: Boolean = inner.isProductive
+    def computeProductive(visited: Set[RecUID]): Boolean = inner.computeProductive(visited)
   
 
   /**
@@ -160,7 +174,8 @@ trait Syntaxes:
       right.hasConflict ||
       snf.intersect(first).nonEmpty
 
-    lazy val isProductive: Boolean = left.isProductive && right.isProductive
+    def computeProductive(visited: Set[RecUID]): Boolean = 
+      left.computeProductive(visited) && right.computeProductive(visited)
   
 
   /**
@@ -170,6 +185,7 @@ trait Syntaxes:
     lazy val nullable: Option[A] = left.nullable.orElse(right.nullable)
 
     def computeFirst(visited: Set[RecUID], acc: Set[Kind] = Set()) =
+      println("here dis")
       left.computeFirst(visited, right.computeFirst(visited,acc))
 
     lazy val snf: Set[Kind] =
@@ -184,7 +200,8 @@ trait Syntaxes:
       left.hasConflict ||
       right.hasConflict
 
-    lazy val isProductive: Boolean = left.isProductive || right.isProductive
+    def computeProductive(visited: Set[RecUID]): Boolean = 
+      left.computeProductive(visited) || right.computeProductive(visited)
 
 
   /**
@@ -195,17 +212,36 @@ trait Syntaxes:
     lazy val nullable: Option[A] = inner.nullable
 
     def computeFirst(visited: Set[RecUID], acc: Set[Kind] = Set()) =
-      inner.computeFirst(visited + uid, acc)
+      println("here1")
+      if visited.contains(this.uid) then
+        println("here2")
+        acc
+      else
+        println("here3")
+        inner.computeFirst(visited + uid, acc)
+
+    def computeProductive(visited: Set[RecUID]): Boolean =
+      if visited.contains(uid) then
+        true
+      else
+        computeProductive(visited + uid)
 
     lazy val snf: Set[Kind] = inner.snf
 
     lazy val hasConflict:Boolean = inner.hasConflict
-    
-    val id = Recursive.nextId
 
     lazy val inner: Syntax[A] = syntax
 
-    lazy val isProductive: Boolean = inner.isProductive
+    override def equals(other: Any): Boolean =
+      if (!other.isInstanceOf[Recursive[_]]) {
+        false
+      }
+      else {
+        val that = other.asInstanceOf[Recursive[_]]
+        this.uid == that.uid
+      }
+
+    override def hashCode(): Int = uid.hashCode
 
 
   object Recursive:
