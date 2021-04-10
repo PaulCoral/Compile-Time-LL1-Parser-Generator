@@ -2,12 +2,13 @@ import syntax.Syntaxes
 import syntax.TokensAndKinds._
 import syntax.TokensAndKinds.Token._
 import syntax.TokensAndKinds.Kind._
-
-@main def hello: Unit = {
+import compiletimeerror.CompileTimeError._
+@main def hello: Unit =
     println("Hello world!")
+    /* change to *true* to turn on compile time error (metals linting should raise an error) */
+    compileTimeError(true, "Some test error message (change boolean to turn on/off)")
     println(Parser.var_assignation)
     println("finsihed")
-}
 
 object Parser extends Syntaxes:
     type Kind = syntax.TokensAndKinds.Kind
