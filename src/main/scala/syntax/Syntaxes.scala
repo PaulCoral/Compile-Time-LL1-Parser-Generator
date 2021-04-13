@@ -42,15 +42,19 @@ trait Syntaxes:
 
     def computeProductive(visited: Set[RecUID] = Set()): Boolean
 
+    def computeHasConflict(visited: Set[RecUID] = Set()): Boolean
+
+    def computeSnf(visited: Set[RecUID] = Set()): Set[Kind]
+
     /**
      * The Should-Not-Follow set of this syntax 
      */
-    lazy val snf: Set[Kind]
+    lazy val snf: Set[Kind] = computeSnf()
 
     /**
      * If this syntax has conflict 
      */
-    lazy val hasConflict: Boolean
+    lazy val hasConflict: Boolean = computeHasConflict()
 
     /**
      * If this syntax is productive
@@ -101,9 +105,9 @@ trait Syntaxes:
 
     def computeProductive(visited: Set[RecUID]): Boolean = true
 
-    lazy val snf: Set[Kind] = Set()
+    def computeHasConflict(visited:Set[RecUID]): Boolean = false
 
-    lazy val hasConflict: Boolean = false
+    def computeSnf(visited: Set[RecUID]): Set[Kind] = Set()
   
 
   /**
@@ -116,9 +120,9 @@ trait Syntaxes:
 
     def computeProductive(visited: Set[RecUID]): Boolean = false
 
-    lazy val snf: Set[Kind] = Set()
+    def computeSnf(visited: Set[RecUID]): Set[Kind] = Set()
 
-    lazy val hasConflict:Boolean = false
+    def computeHasConflict(visited:Set[RecUID]): Boolean = false
   
 
   /**
@@ -131,10 +135,9 @@ trait Syntaxes:
 
     def computeProductive(visited: Set[RecUID]): Boolean = true
 
-    lazy val snf: Set[Kind] = 
-      Set()
+    def computeSnf(visited: Set[RecUID]): Set[Kind] = Set()
 
-    lazy val hasConflict:Boolean = false
+    def computeHasConflict(visited:Set[RecUID]): Boolean = false
   
 
   /**
@@ -146,11 +149,11 @@ trait Syntaxes:
     def computeFirst(visited: Set[RecUID], acc: Set[Kind] = Set()) = 
       inner.computeFirst(visited, acc)
 
-    lazy val snf: Set[Kind] = inner.snf
-
-    lazy val hasConflict:Boolean = inner.hasConflict
+    def computeSnf(visited: Set[RecUID]): Set[Kind] = inner.computeSnf(visited)
 
     def computeProductive(visited: Set[RecUID]): Boolean = inner.computeProductive(visited)
+
+    def computeHasConflict(visited:Set[RecUID]): Boolean = inner.computeHasConflict(visited)
   
 
   /**
@@ -163,17 +166,18 @@ trait Syntaxes:
       (if(right.isProductive) then left.computeFirst(visited, acc) else Set()) 
       ++ (if(left.isNullable) then right.computeFirst(visited, acc) else Set())
 
-    lazy val snf: Set[Kind] = 
-      (if(right.isNullable) then left.snf else Set()) ++
-      (if(left.isProductive) then right.snf else Set())
-
-    lazy val hasConflict:Boolean = 
-      left.hasConflict  ||
-      right.hasConflict ||
-      snf.intersect(first).nonEmpty
+    def computeSnf(visited: Set[RecUID]): Set[Kind] =
+      (if(right.isNullable) then left.computeSnf(visited) else Set()) ++
+      (if(left.isProductive) then right.computeSnf(visited) else Set())
 
     def computeProductive(visited: Set[RecUID]): Boolean = 
       left.computeProductive(visited) && right.computeProductive(visited)
+
+    def computeHasConflict(visited:Set[RecUID]): Boolean =  
+      val l = left.computeHasConflict(visited)
+      val r = right.computeHasConflict(visited)
+      val i = snf.intersect(first).nonEmpty
+      l || r || i
   
 
   /**
@@ -185,20 +189,20 @@ trait Syntaxes:
     def computeFirst(visited: Set[RecUID], acc: Set[Kind] = Set()) =
       left.computeFirst(visited, right.computeFirst(visited,acc))
 
-    lazy val snf: Set[Kind] =
-      left.snf ++
-      right.snf ++
+    def computeSnf(visited: Set[RecUID]): Set[Kind] =
+      left.computeSnf(visited) ++
+      right.computeSnf(visited) ++
       (if(left.isNullable) then right.first else Set()) ++
       (if(right.isNullable) then left.first else Set())
 
-    lazy val hasConflict = 
-      (left.isNullable && right.isNullable) ||
-      (left.first.intersect(right.first).nonEmpty) ||
-      left.hasConflict ||
-      right.hasConflict
-
     def computeProductive(visited: Set[RecUID]): Boolean = 
       left.computeProductive(visited) || right.computeProductive(visited)
+
+    def computeHasConflict(visited:Set[RecUID]): Boolean =  
+      (left.isNullable && right.isNullable) ||
+      (left.first.intersect(right.first).nonEmpty) ||
+      left.computeHasConflict(visited) || 
+      right.computeHasConflict(visited)
 
 
   /**
@@ -220,9 +224,18 @@ trait Syntaxes:
       else
         computeProductive(visited + rid)
 
-    lazy val snf: Set[Kind] = inner.snf
+    def computeSnf(visited: Set[RecUID]): Set[Kind] = 
+      if visited.contains(rid) then
+        Set()
+      else
+        computeSnf(visited + rid)
 
-    lazy val hasConflict:Boolean = inner.hasConflict
+
+    def computeHasConflict(visited:Set[RecUID]): Boolean =
+      if visited.contains(rid) then
+        false
+      else
+        inner.computeHasConflict(visited + rid)
 
     lazy val inner: Syntax[A] = syntax
 
