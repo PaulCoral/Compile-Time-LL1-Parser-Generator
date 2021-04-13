@@ -18,7 +18,7 @@ trait Parsing[A]:
         else
             val (t,s,r) = next(tokens,List(entryPoint), List())
             if r.length > 1 then
-                throw Error("length result")
+                throw Error(s"length result : $r")
             else
                 r.head match
                     case Value(v) => ParsingResult.ParsingSuccess(v.asInstanceOf[A])
@@ -30,59 +30,62 @@ trait Parsing[A]:
         resultStack: Stack[ResultStackElement]
     ): (List[Token], Stack[Syntax[?]], Stack[ResultStackElement]) = 
         import ResultStackElement._
-        if syntaxStack.isEmpty || tokens.isEmpty then
+        if syntaxStack.isEmpty || (tokens.isEmpty && !syntaxStack.head.isNullable) then
             (tokens,syntaxStack, reduce(resultStack))
         else
-            val (x::xs) = syntaxStack
-            val (t::ts) = tokens
-            val tKind = getKind(t)
             val (newTokens, newSyntaxStack, newResultStack) = 
-                if x.first.contains(tKind) then
-                    x match
-                        case Success(v) => 
-                            (tokens,xs,Value(v)::resultStack)
-
-                        case Failure() => 
-                            throw Error(s"Parsing failed with token $t")
-
-                        case Elem(k) => 
-                            (ts,xs,Value(k)::resultStack)
-
-                        case Transform(s, f) => 
-                            (
-                                tokens,
-                                s :: xs,
-                                PartialTransform(f.asInstanceOf[Any => Any]):: resultStack
-                            )
-                        case Sequence(l,r) => 
-                            (
-                                tokens,
-                                l :: r :: xs,
-                                EmptySequence::resultStack
-                            )
-                        case Disjunction(l,r) => 
-                            if l.first.contains(getKind(t)) then
-                                (tokens, l :: xs, resultStack)
-                            else
-                                (tokens, r :: xs, resultStack)
-                        case Recursive(s,_) =>
-                            (tokens, s::xs, resultStack)
-                else if x.isNullable then
-                    (
-                        tokens,
-                        xs,
-                        Value(x.nullable.get) :: resultStack
-                    )
+                val (x::xs) = syntaxStack
+                if tokens.isEmpty then
+                    (tokens, xs, Value(syntaxStack.head.nullable.get)::resultStack)
                 else
-                    throw Error(s"Parsing failed with token $t")
+                    val (t::ts) = tokens
+                    val tKind = getKind(t)
+                    if x.first.contains(tKind) then
+                        x match
+                            case Success(v) => 
+                                (tokens,xs,Value(v)::resultStack)
 
-            next(newTokens, newSyntaxStack, newResultStack)
+                            case Failure() => 
+                                throw Error(s"Parsing failed with token $t")
+
+                            case Elem(k) => 
+                                (ts,xs,Value(t)::resultStack)
+
+                            case Transform(s, f) => 
+                                (
+                                    tokens,
+                                    s :: xs,
+                                    PartialTransform(f.asInstanceOf[Any => Any]):: resultStack
+                                )
+                            case Sequence(l,r) => 
+                                (
+                                    tokens,
+                                    l :: r :: xs,
+                                    EmptySequence::resultStack
+                                )
+                            case Disjunction(l,r) => 
+                                if l.first.contains(getKind(t)) then
+                                    (tokens, l :: xs, resultStack)
+                                else
+                                    (tokens, r :: xs, resultStack)
+                            case Recursive(s,_) =>
+                                (tokens, s::xs, resultStack)
+                    else if x.isNullable then
+                        (
+                            tokens,
+                            xs,
+                            Value(x.nullable.get) :: resultStack
+                        )
+                    else
+                        throw Error(s"Parsing failed with token $t")
+
+            next(newTokens, newSyntaxStack, reduce(newResultStack))
 
     def reduce(result: Stack[ResultStackElement]): Stack[ResultStackElement] =
         import ResultStackElement._
         result match 
-            case Value(v1) :: Value(v2) :: EmptySequence :: rest => Value((v1,v2)) :: rest
-            case Value(v) :: PartialTransform(f) :: rest => Value(f(v)) :: rest
+            case Value(v2) :: Value(v1) :: EmptySequence :: rest => reduce(Value((v1,v2)) :: rest)
+            case Value(v) :: PartialTransform(f) :: rest => reduce(Value(f(v)) :: rest)
             case _ => result
 
     enum ResultStackElement:
