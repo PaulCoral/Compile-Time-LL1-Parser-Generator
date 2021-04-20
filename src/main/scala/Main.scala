@@ -1,11 +1,11 @@
-/* import syntax.Syntaxes
-import parser.Parsing
-import syntax.TokensAndKinds._
-import syntax.TokensAndKinds.Token._
+import syntax._
 import syntax.TokensAndKinds.Kind._
-import parser.Parsing */
 
-@main def hello: Unit = println("hello world")
+@main def hello: Unit = 
+    propagate(epsilon(0))
+    println("hello world")
+
+transparent inline def rec = epsilon(0)
 
 /* @main def hello: Unit = {
     println("Hello world!")
