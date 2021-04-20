@@ -13,7 +13,7 @@ def init[A](syntax: Expr[Syntax[A]])(using Type[A])(using Quotes) = {
     val idToProp = Map[Long, Properties[A]]()
     val childToParent = Map[Long, Long]()
     //val content = Map[Long,Any]()
-    def build(s: Expr[Syntax[A]]) =
+    def build[A](s: Expr[Syntax[A]]):Unit =
         s match {
             case '{Success[A](${v},${i})} => {
                 val id = i.valueOrError
@@ -40,6 +40,14 @@ def init[A](syntax: Expr[Syntax[A]])(using Type[A])(using Quotes) = {
                     id,
                     Properties(first = Set(kindId))
                 )
+
+            case '{Transform($inner, $f, $i)} => 
+                val id = i.valueOrError
+                idToProp.put(
+                    id,
+                    Properties()
+                )
+                build(inner)
             
             case '{Sequence($left,$right,$i)} => 
                 val id = i.valueOrError
