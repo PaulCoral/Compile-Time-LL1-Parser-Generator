@@ -1,11 +1,13 @@
-import syntax.Syntaxes
+/* import syntax.Syntaxes
 import parser.Parsing
 import syntax.TokensAndKinds._
 import syntax.TokensAndKinds.Token._
 import syntax.TokensAndKinds.Kind._
-import parser.Parsing
+import parser.Parsing */
 
-@main def hello: Unit = {
+@main def hello: Unit = println("hello world")
+
+/* @main def hello: Unit = {
     println("Hello world!")
     val a: Parser.ParsingResult[String] = Parser(List(IdentifierToken("var1"),IntLitToken(2),IdentifierToken("var2"),IntLitToken(3)))
     println("Result : ")
@@ -15,9 +17,9 @@ import parser.Parsing
             case _ => a
     )
     println("finsihed")
-}
+} */
 
-object Parser extends Syntaxes with Parsing[String]:
+/* object Parser extends Syntaxes with Parsing[String]:
     type Kind = syntax.TokensAndKinds.Kind
     type Token = syntax.TokensAndKinds.Token
 
@@ -39,4 +41,4 @@ object Parser extends Syntaxes with Parsing[String]:
 
     lazy val rec_sum_seq: Syntax[Int] = (elemInt ~ rec_sum).map{ case (a,b) => a + b }
 
-    lazy val manyAs: Syntax[Unit] = recursive { epsilon(()) | elem(IntKind) ~>~ manyAs }
+    lazy val manyAs: Syntax[Unit] = recursive { epsilon(()) | elem(IntKind) ~>~ manyAs } */

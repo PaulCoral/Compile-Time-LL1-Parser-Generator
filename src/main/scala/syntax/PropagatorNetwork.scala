@@ -2,28 +2,76 @@ package syntax
 
 import scala.quoted._
 import scala.collection.mutable.{Map,Set}
+import TokensAndKinds.Kind
 
     
-transparent inline def propagate[A](inline syntax: Syntax[A])(using Quotes) = ${ init[A]('syntax) }
+inline def propagate[A](inline syntax: Syntax[A])(using Quotes) = ${ init[A]('syntax) }
 
 def init[A](syntax: Expr[Syntax[A]])(using Type[A])(using Quotes) = {
     import quotes.reflect.*
-    val starters = Set[Long]()
+    val toBeUpdated = Set[Long]()
     val idToProp = Map[Long, Properties[A]]()
     val childToParent = Map[Long, Long]()
-    val content = Map[Long,Any]()
+    //val content = Map[Long,Any]()
+    def build(s: Expr[Syntax[A]]) =
+        s match {
+            case '{Success[A](${v},${i})} => {
+                val id = i.valueOrError
+                toBeUpdated.add(id)
+                idToProp.put(
+                    id,
+                    Properties(nullable = Some(v))
+                )
+            }
+            
+            case '{Failure[A]($i)} => 
+                val id = i.valueOrError
+                toBeUpdated.add(id)
+                idToProp.put(
+                    id,
+                    Properties()
+                )
 
-    syntax match
-        case '{Success(${x})} => ???
+            case '{Elem($k,$i)} => 
+                val id = i.valueOrError
+                toBeUpdated.add(id)
+                val kindId = '{${k}.id}.valueOrError
+                idToProp.put(
+                    id,
+                    Properties(first = Set(kindId))
+                )
+            
+            case '{Sequence($left,$right,$i)} => 
+                val id = i.valueOrError
+                val leftId = '{$left.id}.valueOrError
+                val rightId = '{$right.id}.valueOrError
+                childToParent.put(leftId,id)
+                childToParent.put(rightId,id)
+                idToProp.put(
+                    id,
+                    Properties()
+                )
+
+            case '{Disjunction($left,$right,$i)} => 
+                val id = i.valueOrError
+                val leftId = '{$left.id}.valueOrError
+                val rightId = '{$right.id}.valueOrError
+                childToParent.put(leftId,id)
+                childToParent.put(rightId,id)
+                idToProp.put(
+                    id,
+                    Properties()
+                )
+        }
     ???
 }
 
 
-private class Properties[A] {
-    val first:Set[Kind] = Set()
-    val snf: Set[Kind] = Set()
-    var nullable: Option[A] = None
-    var hasConflict: Boolean = false
+private class Properties[A](
+    val first:Set[Long] = Set(),
+    val snf: Set[Long] = Set(),
+    var nullable: Option[Expr[A]] = None,
+    var hasConflict: Boolean = false,
     var isProductive: Boolean = true
-}
+)
 

@@ -1,8 +1,7 @@
 package parser
 
-import syntax.Syntaxes
 
-trait Parsing[A]:
+/* trait Parsing[A]:
     self: Syntaxes =>
     
     type Stack[A] = List[A]
@@ -97,4 +96,4 @@ trait Parsing[A]:
         case ParsingSuccess[A](result: A) extends ParsingResult[A]
         case ParsingSuccessWithRest[A](result:A, rest: List[Token]) extends ParsingResult[A]
         case ParsingFailure[A](msg: String) extends ParsingResult[A]
-        case HasConflict[A](msg: String) extends ParsingResult[A]
+        case HasConflict[A](msg: String) extends ParsingResult[A] */
