@@ -1,5 +1,5 @@
 import ast._
-import scala.io.StdIn.readInt
+
 @main def hello: Unit = {
     println("Hello world!")
     println(nb)
