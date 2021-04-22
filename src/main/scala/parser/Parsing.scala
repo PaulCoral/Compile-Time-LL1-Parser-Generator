@@ -1,100 +1,86 @@
 package parser
 
-import syntax.Syntaxes
+import syntax._
 
-trait Parsing[A]:
-    self: Syntaxes =>
-    
-    type Stack[A] = List[A]
+import scala.collection.mutable.{Set,Map}
+import scala.annotation.tailrec
 
-    def entryPoint: Syntax[A]
+object Parsing {
+    type Kind = syntax.TokensAndKinds.Kind
+    type Token = syntax.TokensAndKinds.Token
 
-    def apply[A](tokens: List[Token]): ParsingResult[A]  = 
-        import ResultStackElement._
-        import ParsingResult._
+    private val starters: Set[Int] = Set()
+    private val nextStarters: Set[Int] = Set()
+    private val idToPropertes: Map[Int, Properties] = Map()
+    private val childToParent: Map[Int, Int] = Map()
 
-        if entryPoint.hasConflict then
-            HasConflict("has conflict")
-        else
-            val (t,s,r) = next(tokens,List(entryPoint), List())
-            if r.length > 1 then
-                throw Error(s"length result : $r")
-            else
-                r.head match
-                    case Value(v) => ParsingResult.ParsingSuccess(v.asInstanceOf[A])
-                    case _ => throw Error("")
 
-    def next[A](
-        tokens: List[Token],
-        syntaxStack: Stack[Syntax[?]],
-        resultStack: Stack[ResultStackElement]
-    ): (List[Token], Stack[Syntax[?]], Stack[ResultStackElement]) = 
-        import ResultStackElement._
-        if syntaxStack.isEmpty || (tokens.isEmpty && !syntaxStack.head.isNullable) then
-            (tokens,syntaxStack, reduce(resultStack))
-        else
-            val (newTokens, newSyntaxStack, newResultStack) = 
-                val (x::xs) = syntaxStack
-                if tokens.isEmpty then
-                    (tokens, xs, Value(syntaxStack.head.nullable.get)::resultStack)
-                else
-                    val (t::ts) = tokens
-                    val tKind = getKind(t)
-                    if x.first.contains(tKind) then
-                        x match
-                            case Success(v) => 
-                                (tokens,xs,Value(v)::resultStack)
+    def apply[A](s: Syntax[A]) = 
+        starters.clear
+        idToPropertes.clear
+        childToParent.clear
+        setUp(s.asInstanceOf[Syntax[Any]])
 
-                            case Failure() => 
-                                throw Error(s"Parsing failed with token $t")
+    private def setUp(s: Syntax[Any]):Unit = 
+        val prop = Properties(s)
+        idToPropertes.put(s.id, prop)
+        s match {
+            case Success(v) => 
+                prop.nullable = Some(v)
+                starters.add(s.id)
+            
+            case Failure() =>
+                prop.isProductive = false
+                prop.hasConflict = true
+                starters.add(s.id)
 
-                            case Elem(k) => 
-                                (ts,xs,Value(t)::resultStack)
+            case Elem(k) => 
+                prop.first.add(k)
+                starters.add(s.id)
 
-                            case Transform(s, f) => 
-                                (
-                                    tokens,
-                                    s :: xs,
-                                    PartialTransform(f.asInstanceOf[Any => Any]):: resultStack
-                                )
-                            case Sequence(l,r) => 
-                                (
-                                    tokens,
-                                    l :: r :: xs,
-                                    EmptySequence::resultStack
-                                )
-                            case Disjunction(l,r) => 
-                                if l.first.contains(getKind(t)) then
-                                    (tokens, l :: xs, resultStack)
-                                else
-                                    (tokens, r :: xs, resultStack)
-                            case Recursive(s,_) =>
-                                (tokens, s::xs, resultStack)
-                    else if x.isNullable then
-                        (
-                            tokens,
-                            xs,
-                            Value(x.nullable.get) :: resultStack
-                        )
-                    else
-                        throw Error(s"Parsing failed with token $t")
+            case Transform(inner,f) => 
+                childToParent.put(inner.id,s.id)
+                prop.transform = Some(f.asInstanceOf[(Any) => Any])
+                setUp(inner.asInstanceOf[Syntax[Any]]) // TODO tailrec
 
-            next(newTokens, newSyntaxStack, reduce(newResultStack))
+            case Disjunction(left, right) =>
+                childToParent.put(left.id,s.id)
+                childToParent.put(right.id,s.id)
+                setUp(left) // TODO tailrec
+                setUp(right) // TODO tailrec
 
-    def reduce(result: Stack[ResultStackElement]): Stack[ResultStackElement] =
-        import ResultStackElement._
-        result match 
-            case Value(v2) :: Value(v1) :: EmptySequence :: rest => reduce(Value((v1,v2)) :: rest)
-            case Value(v) :: PartialTransform(f) :: rest => reduce(Value(f(v)) :: rest)
-            case _ => result
+            case Sequence(left,right) =>
+                childToParent.put(left.id,s.id)
+                childToParent.put(right.id,s.id)
+                setUp(left.asInstanceOf[Syntax[Any]]) // TODO tailrec
+                setUp(right.asInstanceOf[Syntax[Any]]) // TODO tailrec
 
-    enum ResultStackElement:
-        case Value(value: Any)
-        case EmptySequence
-        case PartialTransform(f: Any => Any)
+            case Recursive(inner) => 
+                if(!(idToPropertes.contains(s.id))) then
+                    childToParent.put(inner.id,s.id)
+                    setUp(inner) // TODO tailrec
 
-    enum ParsingResult[A]:
-        case ParsingSuccess[A](result: A) extends ParsingResult[A]
-        case ParsingSuccessWithRest[A](result:A, rest: List[Token]) extends ParsingResult[A]
-        case ParsingFailure[A](msg: String) extends ParsingResult[A]
-        case HasConflict[A](msg: String) extends ParsingResult[A]
+        }
+
+    def propagate() = {
+        starters.foreach{ (id) => 
+            childToParent.remove(id) match
+                case Some(parentId) => {
+                    nextStarters.add(parentId)
+                    parentId
+                }
+                case None => ()
+        }
+    }
+
+    def updateProperties(id: Int) = ???
+
+    class Properties(val syntax: Syntax[Any]){
+        val first: Set[Kind] = Set()
+        val snf: Set[Kind] = Set()
+        var transform: Option[(Any) => Any] = None
+        var nullable:Option[Any] = None
+        var isProductive:Boolean = true
+        var hasConflict = false
+    }
+}
