@@ -15,8 +15,6 @@ inline def parsingTable() = ${init()}
 def init()(using Quotes) = {
     object SyntaxDef {
 
-        def entryPoint: Syntax[String] = many_var_assignation
-
         def getKind(t:Token): Kind = syntax.TokensAndKinds.getKind(t)
 
         lazy val elemInt: Syntax[Int] = accept(IntKind){ case IntLitToken(v) => v }
@@ -34,12 +32,14 @@ def init()(using Quotes) = {
         lazy val rec_sum_seq: Syntax[Int] = (elemInt ~ rec_sum).map{ case (a,b) => a + b }
 
         lazy val manyAs: Syntax[Unit] = recursive { epsilon(()) | elem(IntKind) ~>~ manyAs }
+
+        lazy val nullableConflict = epsilon(0) | epsilon(1)
+
+        lazy val firstFirst = elemId | elemId
     }
     
-    Parsing(SyntaxDef.entryPoint)
-    val a = Parsing.get
-    throw Exception(a.toString)
-    Expr(a._1.toList)
+    val res = Parsing(SyntaxDef.firstFirst)
+    Expr(s"$res")
 }
 
 

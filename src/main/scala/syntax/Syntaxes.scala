@@ -101,7 +101,9 @@ case class Disjunction[A](left: Syntax[A], right: Syntax[A]) extends Syntax[A]
 /**
  * Recursive construction of a syntaxs
  */
-case class Recursive[A](syntax: Syntax[A]) extends Syntax[A]
+case class Recursive[A](syntax: Syntax[A]) extends Syntax[A]{
+  override def toString = "<Recursive>"
+}
 
 
   
