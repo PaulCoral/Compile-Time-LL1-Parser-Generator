@@ -13,14 +13,23 @@ object Parsing {
     private val idToProperties: Map[Int, Properties] = Map()
     private val childToParent: Map[Int, Set[Int]] = Map()
     private val dependencies: Map[Int, Set[Int]] = Map()
+    private val table: Map[(Int,Kind),(Int,ParsingTableElement)] = Map()
+    private val nullable: Map[Int,(Int,ParsingTableElement)] = Map()
 
     def apply[A](s: Syntax[A]) = {        
-        ready.clear
-        idToProperties.clear
-        childToParent.clear
+        cleaning
         setUp(s.asInstanceOf[Syntax[Any]])
         propagate()
         idToProperties
+    }
+
+    private def cleaning = {
+        ready.clear
+        idToProperties.clear
+        childToParent.clear
+        dependencies.clear
+        table.clear
+        nullable.clear
     }
 
     private def addChildToParent(child:Int, parent: Int) = {
@@ -99,13 +108,13 @@ object Parsing {
         }
     }
 
-    def updateProperties(id: Int):Unit = 
+    def updateProperties(id: Int):Unit = {
         idToProperties.get(id) match {
             case None => ()
             case Some(prop@Properties(s)) =>
                 s match {
                     case Success(v) => ()
-                
+
                     case Failure() => ()
 
                     case Elem(k) => ()
@@ -153,7 +162,7 @@ object Parsing {
                         val ff = intersect.nonEmpty
                         prop.hasConflict = both || has || ff
                         if(both){
-                            throw LL1Conflict.NullableNullable("")
+                            throw LL1Conflict.NullableNullable()
                         }
                         if(ff){
                             throw LL1Conflict.FirstFirst(s"${printSetContent(intersect)}")
@@ -208,12 +217,8 @@ object Parsing {
 
                     case _ => throw IllegalStateException(s"Unkown Syntax $s")
                 }
+            }
         }
-        
-  
-    private def parsingTable: Map[(Int, Kind),ParsingTableElement] = {
-      ???
-    } 
 
     private def printSetContent(set: Set[?]): String = {
         set.foldLeft("")((str,elem) => str + s"$elem,")
@@ -230,13 +235,15 @@ object Parsing {
         def isNullable = nullable.nonEmpty
     }
 
+    enum ParsingTableElement {
+        case Function(f: (Any) => Any) extends ParsingTableElement
+        case Prepend(v: Any) extends ParsingTableElement
+        case FollowedBy(s: Int) extends ParsingTableElement
+    }
+
     enum LL1Conflict(msg: String) extends Exception(msg) {
-        case NullableNullable(msg: String) extends LL1Conflict(s"Two branches of a disjunction are nullable $msg")
+        case NullableNullable(msg: String = "") extends LL1Conflict(s"Two branches of a disjunction are nullable $msg")
         case FirstFirst(msg: String) extends LL1Conflict(s"Two branches of a disjunction have non disjoint first set : $msg")
         case SNFFirst(msg: String) extends LL1Conflict(s"The should-not-follow set of the left-hand side of a sequence and the first set of the right-hand side of that sequence both contain the same token kind: $msg")
     }
-
-    enum ParsingTableElement:
-        case NonTerminal(next: Int) extends ParsingTableElement
-        case Terminal extends ParsingTableElement
 }
