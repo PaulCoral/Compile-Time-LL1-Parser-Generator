@@ -206,8 +206,13 @@ object Parsing {
                         prop.hasConflict = child.hasConflict
                 }
         }
+        
+  
+    private def parsingTable: Map[(Int, Kind),ParsingTableElement] = {
+      ???
+    } 
 
-    def printSetContent(set: Set[?]): String = {
+    private def printSetContent(set: Set[?]): String = {
         set.foldLeft("")((str,elem) => str + s"$elem,")
     }
 
@@ -227,4 +232,8 @@ object Parsing {
         case FirstFirst(msg: String) extends LL1Conflict(s"Two branches of a disjunction have non disjoint first set : $msg")
         case SNFFirst(msg: String) extends LL1Conflict(s"The should-not-follow set of the left-hand side of a sequence and the first set of the right-hand side of that sequence both contain the same token kind: $msg")
     }
+
+    enum ParsingTableElement:
+        case NonTerminal(next: Int) extends ParsingTableElement
+        case Terminal extends ParsingTableElement
 }

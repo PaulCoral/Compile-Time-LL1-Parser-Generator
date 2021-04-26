@@ -1,7 +1,6 @@
 package parser
 
 import scala.quoted._
-
 import syntax.Syntax
 import syntax.Syntax._
 import syntax.TokensAndKinds.Kind
@@ -9,11 +8,10 @@ import syntax.TokensAndKinds.Kind._
 import syntax.TokensAndKinds.Token
 import syntax.TokensAndKinds.Token._
 
-inline def parsingTable() = ${init()}
+inline def parsingTable() = ${init}
 
-def init()(using Quotes) = {
+def init(using Quotes) = {
     object SyntaxDef {
-
         def getKind(t:Token): Kind = syntax.TokensAndKinds.getKind(t)
 
         lazy val elemInt: Syntax[Int] = accept(IntKind){ case IntLitToken(v) => v }
@@ -36,11 +34,12 @@ def init()(using Quotes) = {
 
         lazy val firstFirst = elemId | elemId
 
+        lazy val firstFirstRec = recursive{ elemId | elemId }
+
         lazy val snfConflict = (epsilon(0) | elemInt) ~ elemInt
     }
-    
     val res = Parsing(SyntaxDef.snfConflict)
-    Expr(s"$res")
+    scala.quoted.Expr(s"$res")
 }
 
 
