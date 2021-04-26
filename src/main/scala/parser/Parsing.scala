@@ -19,7 +19,6 @@ object Parsing {
         idToProperties.clear
         childToParent.clear
         setUp(s.asInstanceOf[Syntax[Any]])
-        //throw Exception(ready.toString)
         propagate()
         idToProperties
     }
@@ -70,7 +69,7 @@ object Parsing {
                 setUp(right.asInstanceOf[Syntax[Any]]) // TODO tailrec
 
             case Recursive(inner) => 
-                if(!(idToProperties.contains(s.id))) then
+                if(!(dependencies.contains(s.id))) then
                     addChildToParent(inner.id,s.id)
                     dependencies.put(s.id,Set(inner.id))
                     setUp(inner) // TODO tailrec

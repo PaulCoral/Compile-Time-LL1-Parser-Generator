@@ -36,9 +36,10 @@ def init(using Quotes) = {
 
         lazy val firstFirstRec = recursive{ elemId | elemId }
 
-        lazy val snfConflict = (epsilon(0) | elemInt) ~ elemInt
+        lazy val snfConflict = (epsilon(1) | elemInt) ~ elemInt
     }
-    val res = Parsing(SyntaxDef.snfConflict)
+
+    val res = Parsing(SyntaxDef.firstFirst)
     scala.quoted.Expr(s"$res")
 }
 

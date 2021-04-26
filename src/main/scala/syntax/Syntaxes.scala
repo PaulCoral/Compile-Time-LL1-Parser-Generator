@@ -101,8 +101,19 @@ case class Disjunction[A](left: Syntax[A], right: Syntax[A]) extends Syntax[A]
 /**
  * Recursive construction of a syntaxs
  */
-case class Recursive[A](syntax: Syntax[A]) extends Syntax[A]{
+class Recursive[A](syntax: => Syntax[A]) extends Syntax[A]{
+  lazy val inner = syntax
   override def toString = "<Recursive>"
+}
+
+object Recursive {
+  def apply[A](syntax: => Syntax[A]): Recursive[A] = new Recursive(syntax)
+
+  def unapply[A](rec: Recursive[A]): Option[Syntax[A]] =
+    if rec.isInstanceOf[Recursive[A]] then
+      Some(rec.inner)
+    else
+      None
 }
 
 
