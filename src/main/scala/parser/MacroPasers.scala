@@ -35,9 +35,11 @@ def init()(using Quotes) = {
         lazy val nullableConflict = epsilon(0) | epsilon(1)
 
         lazy val firstFirst = elemId | elemId
+
+        lazy val snfConflict = (epsilon(0) | elemInt) ~ elemInt
     }
     
-    val res = Parsing(SyntaxDef.firstFirst)
+    val res = Parsing(SyntaxDef.snfConflict)
     Expr(s"$res")
 }
 

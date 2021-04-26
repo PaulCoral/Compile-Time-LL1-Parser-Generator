@@ -11,17 +11,25 @@ object Parsing {
 
     private val ready: Set[Int] = Set()
     private val idToProperties: Map[Int, Properties] = Map()
-    private val childToParent: Map[Int, Int] = Map()
+    private val childToParent: Map[Int, Set[Int]] = Map()
     private val dependencies: Map[Int, Set[Int]] = Map()
 
-    def apply[A](s: Syntax[A]) = 
+    def apply[A](s: Syntax[A]) = {        
         ready.clear
         idToProperties.clear
         childToParent.clear
         setUp(s.asInstanceOf[Syntax[Any]])
-        //throw Exception()
+        //throw Exception(ready.toString)
         propagate()
         idToProperties
+    }
+
+    private def addChildToParent(child:Int, parent: Int) = {
+        childToParent.get(child) match {
+            case None => childToParent.put(child, Set(parent))
+            case Some(set) => set.add(parent)
+        }
+    }
 
     private def setUp(s: Syntax[Any]):Unit = 
         val prop = Properties(s)
@@ -41,29 +49,29 @@ object Parsing {
                 ready.add(s.id)
 
             case Transform(inner,f) => 
-                childToParent.put(inner.id,s.id)
+                addChildToParent(inner.id,s.id)
                 dependencies.put(s.id,Set(inner.id))
                 prop.transform = Some(f.asInstanceOf[(Any) => Any])
                 setUp(inner.asInstanceOf[Syntax[Any]]) // TODO tailrec
 
             case Disjunction(left, right) =>
-                childToParent.put(left.id,s.id)
-                childToParent.put(right.id,s.id)
+                addChildToParent(left.id,s.id)
+                addChildToParent(right.id,s.id)
                 dependencies.put(s.id,Set(left.id,right.id))
 
                 setUp(left) // TODO tailrec
                 setUp(right) // TODO tailrec
 
             case Sequence(left,right) =>
-                childToParent.put(left.id,s.id)
-                childToParent.put(right.id,s.id)
+                addChildToParent(left.id,s.id)
+                addChildToParent(right.id,s.id)
                 dependencies.put(s.id,Set(left.id,right.id))
                 setUp(left.asInstanceOf[Syntax[Any]]) // TODO tailrec
                 setUp(right.asInstanceOf[Syntax[Any]]) // TODO tailrec
 
             case Recursive(inner) => 
                 if(!(idToProperties.contains(s.id))) then
-                    childToParent.put(inner.id,s.id)
+                    addChildToParent(inner.id,s.id)
                     dependencies.put(s.id,Set(inner.id))
                     setUp(inner) // TODO tailrec
 
@@ -75,12 +83,14 @@ object Parsing {
                 ready.remove(id)
                 updateProperties(id)
                 childToParent.get(id) match
-                    case Some(parentId) => {
-                        val dep = dependencies(parentId)
-                        dep.remove(id)
-                        if (dep.isEmpty){
-                            // parent as no more dependencies => READY
-                            ready.add(parentId)
+                    case Some(parentSet) => {
+                        parentSet.foreach{ parentId => 
+                            val dep = dependencies(parentId)
+                            dep.remove(id)
+                            if (dep.isEmpty){
+                                // parent as no more dependencies => READY
+                                ready.add(parentId)
+                            }
                         }
                     }
                     case None => ()
