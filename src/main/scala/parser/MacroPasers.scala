@@ -2,8 +2,7 @@ package parser
 
 import scala.quoted._
 
-
-import syntax._
+import syntax.Syntax
 import syntax.Syntax._
 import syntax.TokensAndKinds.Kind
 import syntax.TokensAndKinds.Kind._
