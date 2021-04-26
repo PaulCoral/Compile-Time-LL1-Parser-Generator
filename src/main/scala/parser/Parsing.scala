@@ -74,6 +74,8 @@ object Parsing {
                     dependencies.put(s.id,Set(inner.id))
                     setUp(inner) // TODO tailrec
 
+            case _ => throw IllegalStateException(s"Unkown Syntax $s")
+
         }
 
     def propagate() = {
@@ -203,6 +205,8 @@ object Parsing {
                         prop.snf.addAll(child.snf)
                         // Conflict
                         prop.hasConflict = child.hasConflict
+
+                    case _ => throw IllegalStateException(s"Unkown Syntax $s")
                 }
         }
         
