@@ -27,7 +27,16 @@ sealed trait Syntax[A]{
       case _ => Sequence(this, that)
 
   /**
-   * Sequence operator
+   * Sequence operator, keeping the left value
+   */
+  infix def ~<~[B](that: Syntax[B]):Syntax[A] = 
+    (this, that) match
+      case (Failure(),_) => Failure()
+      case (_, Failure()) => Failure()
+      case _ => Sequence(this, that).map{_._1}
+
+  /**
+   * Sequence operator, keeping the right value
    */
   infix def ~>~[B](that: Syntax[B]):Syntax[B] = 
     (this, that) match
