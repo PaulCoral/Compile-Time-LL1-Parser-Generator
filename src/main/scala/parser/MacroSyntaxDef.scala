@@ -39,8 +39,11 @@ def init(using Quotes) = {
         lazy val complexFirstFirst = (((elemId ~>~ elemInt) | (elemInt ~>~ elemInt)) | ((elemId ~>~ elemInt) | (elemInt ~>~ elemInt)))
     }
 
-    val res = Parsing(SyntaxDef.nullableConflict)
-    scala.quoted.Expr(s"$res")
+    val tokens = List(IntLitToken(1),IntLitToken(2))
+
+    val parser = Parsing(SyntaxDef.elemInt)
+    val res = parser(tokens)
+    scala.quoted.Expr(s"${res}")
 }
 
 

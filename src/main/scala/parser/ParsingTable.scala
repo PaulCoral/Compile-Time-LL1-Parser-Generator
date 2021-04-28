@@ -2,52 +2,59 @@ package parser
 
 import syntax.TokensAndKinds._
 import ParsingTable.ParsingTableContext
-import ParsingTable.ParsingTableInstruction
 import ParsingTable.ParsingTableContext._
+import ParsingTable.ParsingTableInstruction
 import ParsingTable.ParsingTableInstruction._
+import ParsingTable.ParsingResult
+import ParsingTable.ParsingResult._
 
 case class ParsingTable[A](entry: Int, table: Map[(Int,Kind), ParsingTableInstruction], nullable:Map[Int,Any]){
     private type Context = List[ParsingTableContext]
     private type Instruction = ParsingTableInstruction
 
-    def apply(tokens: List[Token]) = {
-
+    def apply(tokens: List[Token]):A = {
+        parse(entry,List(),tokens)
     }
 
-    private def parse(s: Int, c: Context, v:Option[Any], tokens: List[Token]): Option[Any] = {
+    private def parse(s: Int, c: Context, tokens: List[Token]): ParsingResult = {
         tokens match {
-            case Nil => v
+            case Nil => UnexpectedEnd()
             case t::ts => {
                 locate(t,s,c) match {
-                    case None => None // no match, not nullable
+                    case None => UnexpectedToken(t.toKind) // no match, not nullable
                     case Some(Left(v)) => 
                         // nullable path taken
                         plugValue(v,c) match {
-                            case (Left(value),c2) => 
-                                // new value and new context
-                                parse(s,c,Some(value),tokens)
-                            case (Right(s2),c2) => 
+                            case Left(value) => 
+                                // context is empty, parsing terminated
+                                result(Some(value),tokens)//parse(s,c,Some(value),tokens)
+                            case Right((s2,c2)) => 
                                 // new found syntax, value saved in new context
-                                parse(s2,c2,None,tokens)
+                                parse(s2,c2,tokens)
                         }
                     case Some(Right(instr)) => 
-                        // token kind matched => token consumed
+                        // token kind matched
                         instr match {
                             case Terminal => 
+                                // TOKEN CONSUMED
                                 plugValue(t,c) match {
-                                    case (Left(value),c2) => 
-                                        // new value and new context
-                                        parse(s,c2,Some(value),ts)
-                                    case (Right(s2),c2) => 
+                                    case Left(value) => 
+                                        // value and context empty Finished
+                                        result(Some(value),ts)//parse(s,c2,Some(value),ts)
+                                    case Right((s2,c2)) => 
                                         // new found syntax, value saved in new context
-                                        parse(s2,c2,None,ts)
+                                        parse(s2,c2,ts)
                             }
 
-                            case NonTerminal(s2, cElem) => parse(s2, cElem::c,v,ts)
+                            case NonTerminal(s2, cElem) => parse(s2, cElem::c,tokens)
                         }
                 }
             }
         }
+    }
+
+    private def result(v: Option[Any], tokens: List[Token]) = v match {
+        case None => 
     }
 
     private def locate(t: Token, s: Int, c: Context): Option[Either[Any, Instruction]] =
@@ -66,12 +73,12 @@ case class ParsingTable[A](entry: Int, table: Map[(Int,Kind), ParsingTableInstru
     }
 
 
-    private def plugValue(v:Any, c:Context): (Either[Any,Int],Context) = {
+    private def plugValue(v:Any, c:Context): Either[Any,(Int,Context)] = {
         c match {
-            case Nil => (Left(v), Nil)
+            case Nil => Left(v)
             case ApplyF(f)::cs => plugValue(f(v),cs)
             case PrependedBy(vp)::cs => plugValue((vp,v),cs)
-            case FollowedBy(s)::cs => (Right(s),PrependedBy(v)::cs)
+            case FollowedBy(s)::cs => Right((s,PrependedBy(v)::cs))
             case Passed::cs => plugValue(v,cs)
         }
     }
@@ -88,5 +95,17 @@ object ParsingTable{
         case PrependedBy(v: Any) extends ParsingTableContext
         case FollowedBy(s: Int) extends ParsingTableContext
         case Passed extends ParsingTableContext
+    }
+
+    enum ParsingResult[A] {
+        case ParsedSuccessfully[A](v: A) extends ParsingResult[A]
+        case UnexpectedEnd[A](expected: Set[Kind]) extends ParsingResult[A]
+        case UnexpectedToken[A](k: Kind, expected: Set[Kind]) extends ParsingResult[A]
+
+        def toType[B]:ParsingResult[B] = this match {
+            case ParsedSuccessfully(v) => ParsedSuccessfully(v.asInstanceOf[B])
+            case UnexpectedEnd(e) => UnexpectedEnd[B](e)
+            case UnexpectedToken(k,e) => UnexpectedToken[B](k,e)
+        }
     }
 }
