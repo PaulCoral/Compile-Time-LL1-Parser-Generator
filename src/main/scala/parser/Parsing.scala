@@ -1,6 +1,10 @@
 package parser
 
 import syntax._
+import ParsingTable.ParsingTableContext
+import ParsingTable.ParsingTableInstruction
+import ParsingTable.ParsingTableContext._
+import ParsingTable.ParsingTableInstruction._
 
 import scala.collection.mutable.{Set,Map}
 import scala.annotation.tailrec
@@ -21,8 +25,8 @@ object Parsing {
     def apply[A](s: Syntax[A]) = {        
         cleaning
         setUp(s.asInstanceOf[Syntax[Any]])
-        propagate()
-        idToProperties
+        propagate
+        ParsingTable[A](s.id,table.toMap,nullable.toMap)
     }
 
     private def cleaning = {
@@ -89,7 +93,7 @@ object Parsing {
 
         }
 
-    def propagate() = {
+    def propagate = {
         while(ready.nonEmpty){
             ready.foreach{ (id) => 
                 ready.remove(id)
@@ -111,8 +115,8 @@ object Parsing {
     }
 
     def updateProperties(id: Int):Unit = {
-        import ParsingTableContext._
-        import ParsingTableInstruction._
+        //import ParsingTableContext._
+        //import ParsingTableInstruction._
 
         idToProperties.get(id) match {
             case None => ()
@@ -193,10 +197,10 @@ object Parsing {
 
                         // Parsing Table
                         lp.first.foreach { k =>
-                            table.put((s.id,k), NonTerminal(left.id, Nothing))
+                            table.put((s.id,k), NonTerminal(left.id, Passed))
                         }
                         rp.first.foreach { k =>
-                            table.put((s.id,k), NonTerminal(right.id, Nothing))
+                            table.put((s.id,k), NonTerminal(right.id, Passed))
                         }
 
                         // Nullable Table
@@ -266,7 +270,7 @@ object Parsing {
 
                         // Parsing Table
                         child.first.foreach { k =>
-                            table.put((s.id,k), NonTerminal(inner.id, Nothing))
+                            table.put((s.id,k), NonTerminal(inner.id, Passed))
                         }
 
                         // Nullable Table
@@ -304,18 +308,6 @@ object Parsing {
         def isNullable = nullable.nonEmpty
     }
 
-    enum ParsingTableInstruction {
-        case NonTerminal(id: Int, elem: ParsingTableContext) extends ParsingTableInstruction
-        case Terminal extends ParsingTableInstruction
-    }
-
-    enum ParsingTableContext {
-        case ApplyF(f: (Any) => Any) extends ParsingTableContext
-        case PrependedBy(v: Any) extends ParsingTableContext
-        case FollowedBy(s: Int) extends ParsingTableContext
-        case Nothing extends ParsingTableContext
-    }
-
     enum LL1Conflict(msg: String) extends Exception(msg) {
         case NullableNullable() extends LL1Conflict(s"Nullable Conflict : Two branches of a disjunction are nullable")
         case FirstFirst(kind: Set[Kind]) extends LL1Conflict(s"First-First Conflict : Two branches of a disjunction have non disjoint first sets : ${printSetContent(kind)}")
@@ -324,3 +316,4 @@ object Parsing {
         override def toString = s"\n⚠️ $msg ⚠️\n"
     }
 }
+

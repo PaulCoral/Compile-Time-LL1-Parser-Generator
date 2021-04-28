@@ -5,21 +5,24 @@ package syntax
   lazy val manyAs: Syntax[Unit] = recursive { epsilon(()) | elem(kindA) ~>~ manyAs }
  */
 
-object TokensAndKinds:
+object TokensAndKinds {
 
-  enum Token:
-    case IntLitToken(value: Int)
-    case IdentifierToken(id : String)
-  
-  enum Kind:
-    case IntKind
-    case IdentifierKind
+  enum Token {
+    case IntLitToken(value: Int) extends Token
+    case IdentifierToken(id : String) extends Token
 
+    def toKind: Kind = {
+      import Token._
+      import Kind._
+      this match {
+        case IntLitToken(_) => IntKind
+        case IdentifierToken(_) => IdentifierKind
+      }
+    }
+  }
   
-  def getKind(t: Token): Kind = 
-    import Token._
-    import Kind._
-    t match
-      case IntLitToken(_) => IntKind
-      case IdentifierToken(_) => IdentifierKind
-  
+  enum Kind {
+    case IntKind extends Kind
+    case IdentifierKind extends Kind
+  }
+}

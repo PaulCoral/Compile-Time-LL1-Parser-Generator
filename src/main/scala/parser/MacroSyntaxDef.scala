@@ -12,8 +12,6 @@ inline def parsingTable() = ${init}
 
 def init(using Quotes) = {
     object SyntaxDef {
-        def getKind(t:Token): Kind = syntax.TokensAndKinds.getKind(t)
-
         lazy val elemInt: Syntax[Int] = accept(IntKind){ case IntLitToken(v) => v }
 
         lazy val elemId: Syntax[String] = accept(IdentifierKind){ case IdentifierToken(v) => v }
@@ -38,10 +36,10 @@ def init(using Quotes) = {
 
         lazy val snfConflict = (epsilon(1) | elemInt) ~ elemInt
 
-        lazy val complexFirstFirst = (((elemId ~>~ elemInt) | (elemId ~>~ elemInt)) | ((elemId ~>~ elemInt) | (elemInt ~>~ elemInt)))
+        lazy val complexFirstFirst = (((elemId ~>~ elemInt) | (elemInt ~>~ elemInt)) | ((elemId ~>~ elemInt) | (elemInt ~>~ elemInt)))
     }
 
-    val res = Parsing(SyntaxDef.complexFirstFirst)
+    val res = Parsing(SyntaxDef.nullableConflict)
     scala.quoted.Expr(s"$res")
 }
 
