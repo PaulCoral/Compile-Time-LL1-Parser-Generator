@@ -14,8 +14,16 @@ case class ParsingTable[A](entry: Int, table: Map[(Int,Kind), ParsingTableInstru
     }
 
     private def parse(s: Int, c: Context, tokens: List[Token]): ParsingResult[Any] = {
+        //throw Exception(table.toString)
         tokens match {
-            case Nil => UnexpectedEnd(getFirstSetOfSyntax(s))
+            case Nil => 
+                nullable.get(s) match {
+                    case None => UnexpectedEnd(getFirstSetOfSyntax(s))
+                    case Some(v) => plugValue(v,c) match {
+                        case Left(v) => result(v,Nil)
+                        case Right((s2,c2)) => parse(s,c,Nil)
+                    }
+                }
             case t::ts => {
                 locate(t,s,c) match {
                     case None => UnexpectedToken(t.toKind,getFirstSetOfSyntax(s)) // no match, not nullable

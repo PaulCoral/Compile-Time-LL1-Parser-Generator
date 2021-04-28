@@ -8,9 +8,10 @@ import syntax.TokensAndKinds.Kind._
 import syntax.TokensAndKinds.Token
 import syntax.TokensAndKinds.Token._
 
-inline def parsingTable() = ${init}
+inline def parsingTable(inline debug: Boolean) = ${init('debug)}
 
-def init(using Quotes) = {
+def init(exprDebug:Expr[Boolean])(using Quotes) = {
+    val debug = exprDebug.valueOrError
     object SyntaxDef {
         lazy val elemInt: Syntax[Int] = accept(IntKind){ case IntLitToken(v) => v }
 
@@ -26,13 +27,15 @@ def init(using Quotes) = {
 
         lazy val rec_sum_seq: Syntax[Int] = (elemInt ~ rec_sum).map{ case (a,b) => a + b }
 
-        lazy val manyAs: Syntax[Unit] = recursive { epsilon(()) | elem(IntKind) ~>~ manyAs }
+        lazy val innerManyAs = epsilon(()) | elem(IntKind) ~>~ manyAs
+
+        lazy val manyAs: Syntax[Unit] = recursive { innerManyAs }
 
         lazy val nullableConflict = (epsilon(0) | epsilon(1))|(epsilon(0)|epsilon(1))
 
         lazy val firstFirst = elemId | elemId
 
-        lazy val firstFirstRec = recursive{ elemId | elemId }
+        lazy val firstFirstRec = recursive{ elemId }
 
         lazy val snfConflict = (epsilon(1) | elemInt) ~ elemInt
 
@@ -41,7 +44,8 @@ def init(using Quotes) = {
 
     val tokens = List(IntLitToken(1),IntLitToken(2))
 
-    val parser = Parsing(SyntaxDef.elemInt)
+    
+    val parser = Parsing(SyntaxDef.manyAs, debug)
     val res = parser(tokens)
     scala.quoted.Expr(s"${res}")
 }

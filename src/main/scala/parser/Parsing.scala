@@ -14,17 +14,21 @@ object Parsing {
     type Token = syntax.TokensAndKinds.Token
 
     private val ready: Set[Int] = Set()
+    private val rec: Set[Int] = Set()
     private val idToProperties: Map[Int, Properties] = Map()
     private val childToParent: Map[Int, Set[Int]] = Map()
-    private val dependencies: Map[Int, Set[Int]] = Map()
+    //private val dependencies: Map[Int, Set[Int]] = Map()
+
+    private val conflicts: Set[LL1Conflict] = Set()
 
     // Parsing
     private val table: Map[(Int,Kind),ParsingTableInstruction] = Map()
     private val nullable: Map[Int,Any] = Map()
 
-    def apply[A](s: Syntax[A]) = {        
+    def apply[A](s: Syntax[A], debug: Boolean) = {        
         cleaning
         setUp(s.asInstanceOf[Syntax[Any]])
+        //throw Exception(s"$ready\n$idToProperties\n$childToParent\n$conflicts")
         propagate
         ParsingTable[A](s.id,table.toMap,nullable.toMap)
     }
@@ -33,7 +37,7 @@ object Parsing {
         ready.clear
         idToProperties.clear
         childToParent.clear
-        dependencies.clear
+        conflicts.clear
         table.clear
         nullable.clear
     }
@@ -51,27 +55,28 @@ object Parsing {
         s match {
             case Success(v) => 
                 prop.nullable = Some(v)
+                prop.update(true)
                 ready.add(s.id)
             
             case Failure() =>
                 prop.isProductive = false
                 prop.hasConflict = true
                 ready.add(s.id)
+                prop.update(true)
 
             case Elem(k) => 
                 prop.first.add(k)
                 ready.add(s.id)
+                prop.update(true)
 
             case Transform(inner,f) => 
                 addChildToParent(inner.id,s.id)
-                dependencies.put(s.id,Set(inner.id))
                 prop.transform = Some(f.asInstanceOf[(Any) => Any])
                 setUp(inner.asInstanceOf[Syntax[Any]]) // TODO tailrec
 
             case Disjunction(left, right) =>
                 addChildToParent(left.id,s.id)
                 addChildToParent(right.id,s.id)
-                dependencies.put(s.id,Set(left.id,right.id))
 
                 setUp(left) // TODO tailrec
                 setUp(right) // TODO tailrec
@@ -79,14 +84,13 @@ object Parsing {
             case Sequence(left,right) =>
                 addChildToParent(left.id,s.id)
                 addChildToParent(right.id,s.id)
-                dependencies.put(s.id,Set(left.id,right.id))
                 setUp(left.asInstanceOf[Syntax[Any]]) // TODO tailrec
                 setUp(right.asInstanceOf[Syntax[Any]]) // TODO tailrec
 
             case Recursive(inner) => 
-                if(!(dependencies.contains(s.id))) then
+                if(!(rec.contains(s.id))) then
                     addChildToParent(inner.id,s.id)
-                    dependencies.put(s.id,Set(inner.id))
+                    rec.add(s.id)
                     setUp(inner) // TODO tailrec
 
             case _ => throw IllegalStateException(s"Unkown Syntax $s")
@@ -98,18 +102,21 @@ object Parsing {
             ready.foreach{ (id) => 
                 ready.remove(id)
                 updateProperties(id)
-                childToParent.get(id) match
-                    case Some(parentSet) => {
-                        parentSet.foreach{ parentId => 
-                            val dep = dependencies(parentId)
-                            dep.remove(id)
-                            if (dep.isEmpty){
-                                // parent as no more dependencies => READY
-                                ready.add(parentId)
+                idToProperties.get(id) match {
+                    case None => ()
+                    case Some(prop) =>
+                        if (prop.updated){
+                            prop.updated = false
+                            childToParent.get(id) match {
+                                case Some(parentSet) => 
+                                    parentSet.foreach{ parentId => 
+                                        ready.add(parentId)
+                                    }
+                                
+                                case None => ()
                             }
                         }
-                    }
-                    case None => ()
+                }
             }
         }
     }
@@ -145,6 +152,9 @@ object Parsing {
                         // Conflict
                         prop.hasConflict = child.hasConflict
 
+                        // updated if child is updated
+                        prop.updated = true
+
                         // Parsing Table
                         child.first.foreach { k =>
                             table.put((s.id,k), NonTerminal(inner.id, ApplyF(f.asInstanceOf[Any => Any])))
@@ -162,8 +172,8 @@ object Parsing {
                         prop.isProductive = lp.isProductive || rp.isProductive
 
                         // First
-                        prop.first.addAll(lp.first)
-                        prop.first.addAll(rp.first)
+                        prop.update(addAllAndNotify(prop.first,lp.first))
+                        prop.update(addAllAndNotify(prop.first,rp.first))
 
                         // Nullable
                         if(lp.isNullable){
@@ -176,10 +186,10 @@ object Parsing {
                         prop.snf.addAll(lp.snf)
                         prop.snf.addAll(rp.snf)
                         if(lp.isNullable){
-                            prop.snf.addAll(rp.first)
+                            prop.update(addAllAndNotify(prop.snf,rp.first))
                         }
                         if(rp.isNullable){
-                            prop.snf.addAll(lp.first)
+                            prop.update(addAllAndNotify(prop.snf,lp.first))
                         }
 
                         // Conflict
@@ -189,10 +199,10 @@ object Parsing {
                         val ff = intersect.nonEmpty
                         prop.hasConflict = both || has || ff
                         if(both){
-                            throw LL1Conflict.NullableNullable()
+                            conflicts.add(LL1Conflict.NullableNullable())
                         }
                         if(ff){
-                            throw LL1Conflict.FirstFirst(intersect)
+                            conflicts.add(LL1Conflict.FirstFirst(intersect))
                         }
 
                         // Parsing Table
@@ -214,10 +224,10 @@ object Parsing {
                         prop.isProductive = lp.isProductive && rp.isProductive
                         // First
                         if(rp.isProductive){
-                            prop.first.addAll(lp.first)
+                            prop.update(addAllAndNotify(prop.first,lp.first))
                         }
                         if(lp.isNullable){
-                            prop.first.addAll(rp.first)
+                            prop.update(addAllAndNotify(prop.first,rp.first))
                         }
                         // Nullable
                         if(lp.isNullable && rp.isNullable){
@@ -225,10 +235,10 @@ object Parsing {
                         }
                         // Should-Not-Follow
                         if(rp.isNullable){
-                            prop.snf.addAll(lp.snf)
+                            prop.update(addAllAndNotify(prop.snf,lp.snf))
                         }
                         if(lp.isProductive){
-                            prop.snf.addAll(rp.snf)
+                            prop.update(addAllAndNotify(prop.snf,lp.snf))
                         }
                         // Conflict
                         val has = lp.hasConflict || rp.hasConflict
@@ -236,7 +246,7 @@ object Parsing {
                         val snfFirst = intersect.nonEmpty
                         prop.hasConflict = has || snfFirst
                         if(snfFirst){
-                            throw LL1Conflict.SNFFirst(intersect)
+                            conflicts.add(LL1Conflict.SNFFirst(intersect))
                         }
 
                         // Parsing Table
@@ -254,8 +264,8 @@ object Parsing {
                         // Nullable Table
                         addToNullableTable(s.id, prop.nullable)
 
-
                     case Recursive(inner) => 
+                        throw Error("here")
                         val child = idToProperties(inner.id)
                         // Productive
                         prop.isProductive = child.isProductive
@@ -267,6 +277,8 @@ object Parsing {
                         prop.snf.addAll(child.snf)
                         // Conflict
                         prop.hasConflict = child.hasConflict
+
+                        prop.updated = true
 
                         // Parsing Table
                         child.first.foreach { k =>
@@ -280,6 +292,23 @@ object Parsing {
                 }
             }
         }
+
+
+    /**
+     *  Add all item in `that` to `thiz`. 
+     *  @param thiz set to add item to
+     *  @param that set to take item from
+     *  
+     *  @return `true` if thiz has changed, `false` otherwise
+     */
+    private def addAllAndNotify[A](thiz: Set[A], that:Set[A]):Boolean = {
+        if(that.subsetOf(thiz)){
+            false
+        } else {
+            thiz.addAll(that)
+            true
+        }
+    }
 
     private def addToNullableTable(id:Int, opt : Option[Any]) = {
         opt match {
@@ -305,7 +334,11 @@ object Parsing {
         var isProductive:Boolean = true
         var hasConflict = false
 
+        var updated = false
+
         def isNullable = nullable.nonEmpty
+
+        def update(b: Boolean) = updated = updated || b
     }
 
     enum LL1Conflict(msg: String) extends Exception(msg) {

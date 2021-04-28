@@ -112,17 +112,20 @@ case class Disjunction[A](left: Syntax[A], right: Syntax[A]) extends Syntax[A]
  */
 class Recursive[A](syntax: => Syntax[A]) extends Syntax[A]{
   lazy val inner = syntax
-  override def toString = "<Recursive>"
+  override def toString = s"<Recursive_id:$id>"
 }
 
 object Recursive {
   def apply[A](syntax: => Syntax[A]): Recursive[A] = new Recursive(syntax)
 
-  def unapply[A](rec: Recursive[A]): Option[Syntax[A]] =
-    if rec.isInstanceOf[Recursive[A]] then
-      Some(rec.inner)
-    else
+  def unapply[A](that: Syntax[A]): Option[Syntax[A]] = {
+    if (that.isInstanceOf[Recursive[_]]) {
+      val other = that.asInstanceOf[Recursive[A]]
+      Some(other.inner)
+    } else {
       None
+    }
+  }
 }
 
 
