@@ -25,4 +25,11 @@ object TokensAndKinds {
     case IntKind extends Kind
     case IdentifierKind extends Kind
   }
+
+  object Kind {
+    import scala.quoted._
+    given KindToExpr : ToExpr[Kind] with {
+      def apply(k:Kind)(using Quotes): Expr[Kind] = Expr(k)
+    }
+  }
 }

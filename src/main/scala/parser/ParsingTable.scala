@@ -1,5 +1,10 @@
 package parser
 
+
+import scala.quoted._
+import scala.quoted.ToExpr._
+
+
 import syntax.TokensAndKinds._
 import ParsingTable.ParsingTableContext._
 import ParsingTable.ParsingTableInstruction._
@@ -96,11 +101,32 @@ object ParsingTable{
         case Terminal extends ParsingTableInstruction
     }
 
+    object ParsingTableInstruction {
+        given ToExpr[ParsingTableInstruction] with {
+            def apply(pti : ParsingTableInstruction)(using Quotes):Expr[ParsingTableInstruction] = 
+                pti match {
+                    case Terminal => Expr(Terminal)
+                    case NonTerminal(i,e) => '{NonTerminal(${Expr(i)}, ${Expr(e)})}
+                }
+        }
+    }
+
     enum ParsingTableContext {
         case ApplyF(f: (Any) => Any) extends ParsingTableContext
         case PrependedBy(v: Any) extends ParsingTableContext
         case FollowedBy(s: Int) extends ParsingTableContext
         case Passed extends ParsingTableContext
+    }
+
+    object ParsingTableContext {
+        given ToExpr[ParsingTableContext] with {
+            def apply(ptc:ParsingTableContext)(using Quotes) = ptc match{
+                case ApplyF(f) => '{ApplyF(${Expr(f)})}
+                case PrependedBy(v) => ???
+                case FollowedBy(s) => ???
+                case Passed => ???
+            }
+        }
     }
 
     sealed trait ParsingResult[A] {
@@ -126,4 +152,16 @@ object ParsingTable{
     case class ParsedSuccessfullyWithRest[A](v: A, tokens:List[Token]) extends ParsingResult[A]
     case class UnexpectedEnd[A](expected: Set[Kind]) extends ParsingResult[A]
     case class UnexpectedToken[A](k: Kind, expected: Set[Kind]) extends ParsingResult[A]
+
+    given ParsingTableToExpr[A: Type: ToExpr]: ToExpr[ParsingTable[A]] with {
+        import Kind._
+        def apply(pt: ParsingTable[A])(using Quotes): Expr[ParsingTable[A]] =
+            '{ParsingTable(${Expr(pt.entry)},${Expr(pt.table)},${Expr(pt.nullable)})} 
+    }
+
+    given ToExpr[Any] with {
+        def apply(any : Any)(using Quotes): Expr[Any] = any match {
+            case x:Int => Expr(x)
+        }
+    }
 }

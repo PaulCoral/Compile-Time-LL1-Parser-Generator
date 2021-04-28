@@ -30,6 +30,9 @@ object Parsing {
         setUp(s.asInstanceOf[Syntax[Any]])
         //throw Exception(s"$ready\n$idToProperties\n$childToParent\n$conflicts")
         propagate
+        if(conflicts.nonEmpty){
+            throw Exception(conflicts.toString)
+        }
         ParsingTable[A](s.id,table.toMap,nullable.toMap)
     }
 
