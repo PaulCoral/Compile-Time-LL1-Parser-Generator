@@ -265,7 +265,6 @@ object Parsing {
                         addToNullableTable(s.id, prop.nullable)
 
                     case Recursive(inner) => 
-                        throw Error("here")
                         val child = idToProperties(inner.id)
                         // Productive
                         prop.isProductive = child.isProductive
