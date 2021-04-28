@@ -165,7 +165,7 @@ object Parsing {
                             throw LL1Conflict.NullableNullable()
                         }
                         if(ff){
-                            throw LL1Conflict.FirstFirst(s"${printSetContent(intersect)}")
+                            throw LL1Conflict.FirstFirst(intersect)
                         }
 
 
@@ -198,7 +198,7 @@ object Parsing {
                         val snfFirst = intersect.nonEmpty
                         prop.hasConflict = has || snfFirst
                         if(snfFirst){
-                            throw LL1Conflict.SNFFirst(s"${printSetContent(intersect)}")
+                            throw LL1Conflict.SNFFirst(intersect)
                         }
 
 
@@ -221,7 +221,12 @@ object Parsing {
         }
 
     private def printSetContent(set: Set[?]): String = {
-        set.foldLeft("")((str,elem) => str + s"$elem,")
+        if set.isEmpty then
+            "<None>"
+        else
+            val h = set.head
+            val t = set.tail
+            t.foldLeft(s"$h")((str,elem) => str + s", $elem")
     }
 
     case class Properties(val syntax: Syntax[Any]){
@@ -243,7 +248,7 @@ object Parsing {
 
     enum LL1Conflict(msg: String) extends Exception(msg) {
         case NullableNullable(msg: String = "") extends LL1Conflict(s"Two branches of a disjunction are nullable $msg")
-        case FirstFirst(msg: String) extends LL1Conflict(s"Two branches of a disjunction have non disjoint first set : $msg")
-        case SNFFirst(msg: String) extends LL1Conflict(s"The should-not-follow set of the left-hand side of a sequence and the first set of the right-hand side of that sequence both contain the same token kind: $msg")
+        case FirstFirst(kind: Set[Kind]) extends LL1Conflict(s"Two branches of a disjunction have non disjoint first sets : ${printSetContent(kind)}")
+        case SNFFirst(kind: Set[Kind]) extends LL1Conflict(s"The should-not-follow set of the left-hand side of a sequence and the first set of the right-hand side of that sequence are not disjoint: ${printSetContent(kind)}")
     }
 }

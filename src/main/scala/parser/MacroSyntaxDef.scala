@@ -30,16 +30,18 @@ def init(using Quotes) = {
 
         lazy val manyAs: Syntax[Unit] = recursive { epsilon(()) | elem(IntKind) ~>~ manyAs }
 
-        lazy val nullableConflict = epsilon(0) | epsilon(1)
+        lazy val nullableConflict = (epsilon(0) | epsilon(1))|(epsilon(0)|epsilon(1))
 
         lazy val firstFirst = elemId | elemId
 
         lazy val firstFirstRec = recursive{ elemId | elemId }
 
         lazy val snfConflict = (epsilon(1) | elemInt) ~ elemInt
+
+        lazy val complexFirstFirst = (((elemId ~>~ elemInt) | (elemId ~>~ elemInt)) | ((elemId ~>~ elemInt) | (elemInt ~>~ elemInt)))
     }
 
-    val res = Parsing(SyntaxDef.firstFirst)
+    val res = Parsing(SyntaxDef.complexFirstFirst)
     scala.quoted.Expr(s"$res")
 }
 
