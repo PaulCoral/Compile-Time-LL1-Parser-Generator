@@ -13,8 +13,10 @@ object Parsing {
     private val idToProperties: Map[Int, Properties] = Map()
     private val childToParent: Map[Int, Set[Int]] = Map()
     private val dependencies: Map[Int, Set[Int]] = Map()
-    private val table: Map[(Int,Kind),(Int,ParsingTableElement)] = Map()
-    private val nullable: Map[Int,(Int,ParsingTableElement)] = Map()
+
+    // Parsing
+    private val table: Map[(Int,Kind),ParsingTableInstruction] = Map()
+    private val nullable: Map[Int,Any] = Map()
 
     def apply[A](s: Syntax[A]) = {        
         cleaning
@@ -109,15 +111,22 @@ object Parsing {
     }
 
     def updateProperties(id: Int):Unit = {
+        import ParsingTableContext._
+        import ParsingTableInstruction._
+
         idToProperties.get(id) match {
             case None => ()
             case Some(prop@Properties(s)) =>
                 s match {
-                    case Success(v) => ()
+                    case Success(v) => 
+                        // Nullable Table
+                        nullable.put(s.id,v)
 
                     case Failure() => ()
 
-                    case Elem(k) => ()
+                    case Elem(k) => 
+                        // Parsing Table
+                        table.put((s.id,k), Terminal)
 
                     case Transform(inner,f) =>
                         val child = idToProperties(inner.id)
@@ -132,20 +141,33 @@ object Parsing {
                         // Conflict
                         prop.hasConflict = child.hasConflict
 
+                        // Parsing Table
+                        child.first.foreach { k =>
+                            table.put((s.id,k), NonTerminal(inner.id, ApplyF(f.asInstanceOf[Any => Any])))
+                        }
+
+                        // Nullable Table
+                        addToNullableTable(s.id, prop.nullable)
+                            
+
                     case Disjunction(left, right) =>
                         val lp = idToProperties(left.id)
                         val rp = idToProperties(right.id)
+
                         // Productive
                         prop.isProductive = lp.isProductive || rp.isProductive
+
                         // First
                         prop.first.addAll(lp.first)
                         prop.first.addAll(rp.first)
+
                         // Nullable
                         if(lp.isNullable){
                             prop.nullable = lp.nullable
                         }else{
                             prop.nullable = rp.nullable
                         }
+
                         // Should-Not-Follow
                         prop.snf.addAll(lp.snf)
                         prop.snf.addAll(rp.snf)
@@ -155,6 +177,7 @@ object Parsing {
                         if(rp.isNullable){
                             prop.snf.addAll(lp.first)
                         }
+
                         // Conflict
                         val both = lp.isNullable && rp.isNullable
                         val has = lp.hasConflict || rp.hasConflict
@@ -167,6 +190,17 @@ object Parsing {
                         if(ff){
                             throw LL1Conflict.FirstFirst(intersect)
                         }
+
+                        // Parsing Table
+                        lp.first.foreach { k =>
+                            table.put((s.id,k), NonTerminal(left.id, Nothing))
+                        }
+                        rp.first.foreach { k =>
+                            table.put((s.id,k), NonTerminal(right.id, Nothing))
+                        }
+
+                        // Nullable Table
+                        addToNullableTable(s.id, prop.nullable)
 
 
                     case Sequence(left,right) =>
@@ -201,6 +235,21 @@ object Parsing {
                             throw LL1Conflict.SNFFirst(intersect)
                         }
 
+                        // Parsing Table
+                        lp.first.foreach { k =>
+                            table.put((s.id,k), NonTerminal(left.id, FollowedBy(right.id)))
+                        }
+                        lp.nullable match {
+                            case None => ()
+                            case Some(v) =>
+                                rp.first.foreach { k =>
+                                    table.put((s.id,k), NonTerminal(right.id, PrependedBy(v)))
+                                }
+                        }
+
+                        // Nullable Table
+                        addToNullableTable(s.id, prop.nullable)
+
 
                     case Recursive(inner) => 
                         val child = idToProperties(inner.id)
@@ -215,10 +264,25 @@ object Parsing {
                         // Conflict
                         prop.hasConflict = child.hasConflict
 
+                        // Parsing Table
+                        child.first.foreach { k =>
+                            table.put((s.id,k), NonTerminal(inner.id, Nothing))
+                        }
+
+                        // Nullable Table
+                        addToNullableTable(s.id, prop.nullable)
+
                     case _ => throw IllegalStateException(s"Unkown Syntax $s")
                 }
             }
         }
+
+    private def addToNullableTable(id:Int, opt : Option[Any]) = {
+        opt match {
+            case None => ()
+            case Some(v) => nullable.put(id, v)
+        }
+    }
 
     private def printSetContent(set: Set[?]): String = {
         if set.isEmpty then
@@ -240,15 +304,23 @@ object Parsing {
         def isNullable = nullable.nonEmpty
     }
 
-    enum ParsingTableElement {
-        case Function(f: (Any) => Any) extends ParsingTableElement
-        case Prepend(v: Any) extends ParsingTableElement
-        case FollowedBy(s: Int) extends ParsingTableElement
+    enum ParsingTableInstruction {
+        case NonTerminal(id: Int, elem: ParsingTableContext) extends ParsingTableInstruction
+        case Terminal extends ParsingTableInstruction
+    }
+
+    enum ParsingTableContext {
+        case ApplyF(f: (Any) => Any) extends ParsingTableContext
+        case PrependedBy(v: Any) extends ParsingTableContext
+        case FollowedBy(s: Int) extends ParsingTableContext
+        case Nothing extends ParsingTableContext
     }
 
     enum LL1Conflict(msg: String) extends Exception(msg) {
-        case NullableNullable(msg: String = "") extends LL1Conflict(s"Two branches of a disjunction are nullable $msg")
-        case FirstFirst(kind: Set[Kind]) extends LL1Conflict(s"Two branches of a disjunction have non disjoint first sets : ${printSetContent(kind)}")
-        case SNFFirst(kind: Set[Kind]) extends LL1Conflict(s"The should-not-follow set of the left-hand side of a sequence and the first set of the right-hand side of that sequence are not disjoint: ${printSetContent(kind)}")
+        case NullableNullable() extends LL1Conflict(s"Nullable Conflict : Two branches of a disjunction are nullable")
+        case FirstFirst(kind: Set[Kind]) extends LL1Conflict(s"First-First Conflict : Two branches of a disjunction have non disjoint first sets : ${printSetContent(kind)}")
+        case SNFFirst(kind: Set[Kind]) extends LL1Conflict(s"First-Follow Conflict : The should-not-follow set of the left-hand side of a sequence and the first set of the right-hand side of that sequence are not disjoint: ${printSetContent(kind)}")
+
+        override def toString = s"\n⚠️ $msg ⚠️\n"
     }
 }
