@@ -17,15 +17,13 @@ object Parsing {
     private val rec: Set[Int] = Set()
     private val idToProperties: Map[Int, Properties] = Map()
     private val childToParent: Map[Int, Set[Int]] = Map()
-    //private val dependencies: Map[Int, Set[Int]] = Map()
 
     private val conflicts: Set[LL1Conflict] = Set()
 
-    // Parsing
     private val table: Map[(Int,Kind),ParsingTableInstruction] = Map()
     private val nullable: Map[Int,Any] = Map()
 
-    def apply[A](s: Syntax[A], debug: Boolean) = {        
+    def apply[A](s: Syntax[A]) = {        
         cleaning
         setUp(s.asInstanceOf[Syntax[Any]])
         //throw Exception(s"$ready\n$idToProperties\n$childToParent\n$conflicts")
@@ -125,9 +123,6 @@ object Parsing {
     }
 
     def updateProperties(id: Int):Unit = {
-        //import ParsingTableContext._
-        //import ParsingTableInstruction._
-
         idToProperties.get(id) match {
             case None => ()
             case Some(prop@Properties(s)) =>

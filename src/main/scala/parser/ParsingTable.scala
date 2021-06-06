@@ -121,7 +121,7 @@ object ParsingTable{
     object ParsingTableContext {
         given ToExpr[ParsingTableContext] with {
             def apply(ptc:ParsingTableContext)(using Quotes) = ptc match{
-                case ApplyF(f) => '{ApplyF(${Expr(f)})}
+                case ApplyF(f) => ???//'{ApplyF(${Expr(f)})}
                 case PrependedBy(v) => ???
                 case FollowedBy(s) => ???
                 case Passed => ???

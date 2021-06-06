@@ -1,0 +1,5 @@
+package syntax
+
+trait SyntaxDefinition {
+    
+}

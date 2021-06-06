@@ -1,5 +1,6 @@
 package syntax
 
+import scala.collection.mutable.Map
 
 import TokensAndKinds._
  
@@ -54,7 +55,7 @@ sealed trait Syntax[A]{
 object Syntax {
   private var id : Int = 0
 
-  def nextId = {
+  private def nextId:Int = {
     val prev: Int = id
     id = id + 1
     prev

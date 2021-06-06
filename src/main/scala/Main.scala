@@ -1,5 +1,5 @@
-import parser.parsingTable
+import example.syntaxdef.SyntaxDef
 
 @main def hello: Unit = 
-    val parsed = parsingTable(true)
-    println(s"Result : ${parsed}")    
+    val a = SyntaxDef.parse
+    println(s"Result : ${a}")    
