@@ -105,7 +105,7 @@ object ParsingTable{
         given ToExpr[ParsingTableInstruction] with {
             def apply(pti : ParsingTableInstruction)(using Quotes):Expr[ParsingTableInstruction] = 
                 pti match {
-                    case Terminal => Expr(Terminal)
+                    case Terminal => '{Terminal}
                     case NonTerminal(i,e) => '{NonTerminal(${Expr(i)}, ${Expr(e)})}
                 }
         }
