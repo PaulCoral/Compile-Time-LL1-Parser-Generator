@@ -29,7 +29,10 @@ object TokensAndKinds {
   object Kind {
     import scala.quoted._
     given KindToExpr : ToExpr[Kind] with {
-      def apply(k:Kind)(using Quotes): Expr[Kind] = Expr(k)
+      def apply(k:Kind)(using Quotes): Expr[Kind] = k match {
+        case IntKind => '{IntKind}
+        case IdentifierKind => '{IdentifierKind}
+      }
     }
   }
 }

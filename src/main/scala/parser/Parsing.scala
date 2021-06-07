@@ -6,6 +6,7 @@ import ParsingTable.ParsingTableInstruction
 import ParsingTable.ParsingTableContext._
 import ParsingTable.ParsingTableInstruction._
 
+import scala.quoted._
 import scala.collection.mutable.{Set,Map}
 import scala.annotation.tailrec
 

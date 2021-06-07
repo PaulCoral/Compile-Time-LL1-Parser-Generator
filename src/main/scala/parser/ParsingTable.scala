@@ -102,7 +102,7 @@ object ParsingTable{
     }
 
     object ParsingTableInstruction {
-        given ToExpr[ParsingTableInstruction] with {
+        given ParsingTableInstructionToExpr(using ToExpr[Any]): ToExpr[ParsingTableInstruction] with {
             def apply(pti : ParsingTableInstruction)(using Quotes):Expr[ParsingTableInstruction] = 
                 pti match {
                     case Terminal => '{Terminal}
@@ -119,12 +119,12 @@ object ParsingTable{
     }
 
     object ParsingTableContext {
-        given ToExpr[ParsingTableContext] with {
+        given ParsingTableContextToExpr(using ToExpr[Any]) : ToExpr[ParsingTableContext] with {
             def apply(ptc:ParsingTableContext)(using Quotes) = ptc match{
-                case ApplyF(f) => ???//'{ApplyF(${Expr(f)})}
-                case PrependedBy(v) => ???
-                case FollowedBy(s) => ???
-                case Passed => ???
+                case ApplyF(f) => '{Passed} // TODO
+                case PrependedBy(v) => '{PrependedBy(${Expr(v)})}
+                case FollowedBy(s) => '{FollowedBy(${Expr(s)})}
+                case Passed => '{Passed}
             }
         }
     }
@@ -153,15 +153,10 @@ object ParsingTable{
     case class UnexpectedEnd[A](expected: Set[Kind]) extends ParsingResult[A]
     case class UnexpectedToken[A](k: Kind, expected: Set[Kind]) extends ParsingResult[A]
 
-    given ParsingTableToExpr[A: Type: ToExpr]: ToExpr[ParsingTable[A]] with {
+    given ParsingTableToExpr[A: Type: ToExpr](using a:ToExpr[Any]): ToExpr[ParsingTable[A]] with {
         import Kind._
-        def apply(pt: ParsingTable[A])(using Quotes): Expr[ParsingTable[A]] =
+        def apply(pt: ParsingTable[A])(using Quotes): Expr[ParsingTable[A]] = {
             '{ParsingTable(${Expr(pt.entry)},${Expr(pt.table)},${Expr(pt.nullable)})} 
-    }
-
-    given ToExpr[Any] with {
-        def apply(any : Any)(using Quotes): Expr[Any] = any match {
-            case x:Int => Expr(x)
         }
     }
 }

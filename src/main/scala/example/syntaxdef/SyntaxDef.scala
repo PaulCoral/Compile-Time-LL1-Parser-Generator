@@ -6,6 +6,8 @@ import syntax.TokensAndKinds.Kind._
 import syntax.TokensAndKinds.Token._
 import syntax.getPos
 
+import scala.quoted._
+
 import example.syntaxdef.parsingTable
 
 object SyntaxDef {
@@ -39,5 +41,11 @@ object SyntaxDef {
 
     inline def parse = parsingTable
 
-    //def show = getPos(firstFirst)
+    given ToExpr[Any] with {
+        def apply(a: Any)(using Quotes) = a match {
+            case x:Int => Expr(x)
+            case x:String => Expr(x)
+            case _ => throw MatchError(a)
+        }
+    }
 }
