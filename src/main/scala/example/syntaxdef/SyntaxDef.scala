@@ -6,15 +6,16 @@ import syntax.Syntax._
 import syntax.TokensAndKinds.Kind._
 import syntax.TokensAndKinds.Token._
 import syntax.getPos
+import syntax.SyntaxDefinition
 
-import parser.ParsingTable
+import parser._
+
+//import example.syntaxdef.getPartialParsingTable
 
 import scala.quoted._
 
-import example.syntaxdef.parsingTable
-import syntax.SyntaxDefinition
 
-object SyntaxDef extends SyntaxDefinition[Unit]{
+object SyntaxDef extends SyntaxDefinition[(Int,Int)] {
     given id:IdCounter = new IdCounter()
 
     lazy val elemInt: Syntax[Int] = accept(IntKind){ case IntLitToken(v) => v }
@@ -44,11 +45,9 @@ object SyntaxDef extends SyntaxDefinition[Unit]{
     lazy val complexFirstFirst = (((elemId ~>~ elemInt) | (elemInt ~>~ elemInt)) | ((elemId ~>~ elemInt) | (elemInt ~>~ elemInt)))
 
 
-    lazy val entryPoint = manyAs
+    lazy val entryPoint = snfConflict
 
-    def partialParsingTable = parsingTable
-
-    def parse = partialParsingTable.withFunctionTable(this)
+    inline def parse = getPartialParsingTable.withFunctionTable(entryPoint)
 
 
     given ToExpr[Any] with {
@@ -64,3 +63,6 @@ object SyntaxDef extends SyntaxDefinition[Unit]{
         def apply(u: Unit)(using Quotes) = '{()}
     }
 }
+
+
+

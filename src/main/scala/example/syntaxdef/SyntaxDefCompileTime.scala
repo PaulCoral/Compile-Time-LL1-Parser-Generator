@@ -12,16 +12,9 @@ import parser._
 
 import SyntaxDef.given
 
-inline def parsingTable = ${init}
+inline def getPartialParsingTable = ${init}
 
-def init[A](using Quotes) = {
-    val syntax = SyntaxDef.manyAs
-    
+def init(using Quotes) = {
     val parsing = new Parsing
-
-    val pt = parsing(syntax)
-    //Expr(pt(tokens).toString)
-    Expr(pt)
+    Expr(parsing(SyntaxDef.entryPoint))
 }
-
-

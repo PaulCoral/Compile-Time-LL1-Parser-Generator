@@ -26,7 +26,7 @@ class Parsing {
     private val table: Map[(Int,Kind),ParsingTableInstruction] = Map()
     private val nullable: Map[Int,Any] = Map()
 
-    def apply[A](s: Syntax[A]) = {        
+    def apply[A](s: Syntax[A]):PartialParsingTable[A] = {        
         cleaning
         setUp(s.asInstanceOf[Syntax[Any]])
         propagate

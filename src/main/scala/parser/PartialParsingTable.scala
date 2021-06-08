@@ -9,8 +9,14 @@ import syntax.SyntaxDefinition
 
 
 case class PartialParsingTable[A](entry: Int, table: Map[(Int,Kind), ParsingTableInstruction], nullable:Map[Int,Any]){
-    def withFunctionTable[A](sd: SyntaxDefinition[A]):ParsingTable[A] = 
-        ParsingTable(entry, table,nullable,Syntax.idToFunc(sd.entryPoint))
+    def withFunctionTable(ft : Map[Int,(Any => Any)]):ParsingTable[A] = 
+        ParsingTable(entry, table,nullable,ft)
+
+    def withFunctionTable(s: Syntax[A]):ParsingTable[A] = 
+        withFunctionTable(Syntax.idToFunc(s))
+        
+    def withFunctionTable(sd: SyntaxDefinition[A]):ParsingTable[A] = 
+        withFunctionTable(Syntax.idToFunc(sd.entryPoint))
 }
 
 object PartialParsingTable {
