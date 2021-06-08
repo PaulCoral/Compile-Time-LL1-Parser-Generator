@@ -15,7 +15,7 @@ import SyntaxDef.given
 inline def parsingTable = ${init}
 
 def init[A](using Quotes) = {
-    val syntax = SyntaxDef.sum
+    val syntax = SyntaxDef.manyAs
     
     val parsing = new Parsing
 

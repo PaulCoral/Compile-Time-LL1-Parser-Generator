@@ -63,13 +63,12 @@ object Syntax {
 
   import scala.collection.mutable.Set
   def idToFunc(s: Syntax[?], ids:Set[Int] = Set(),acc: Map[Int,(Any => Any)] = Map()):Map[Int, (Any => Any)] = 
-    val nids = ids += s.id
     s match {
-      case x if !(ids.contains(x.id)) => acc
-      case Transform(i,f) => idToFunc(i, nids,acc + (s.id -> f.asInstanceOf[Any => Any]))
-      case Sequence(l,r) =>  idToFunc(r,nids,idToFunc(l,nids,acc))
-      case Disjunction(l,r) => idToFunc(r,nids,idToFunc(l,nids,acc))
-      case Recursive(i) => idToFunc(i,nids,acc)
+      case x if ids.contains(x.id) => acc
+      case Transform(i,f) => idToFunc(i, ids += s.id,acc + (s.id -> f.asInstanceOf[Any => Any]))
+      case Sequence(l,r) =>  idToFunc(r,ids += s.id,idToFunc(l,ids += s.id,acc))
+      case Disjunction(l,r) => idToFunc(r,ids += s.id,idToFunc(l,ids += s.id,acc))
+      case Recursive(i) => idToFunc(i,ids += s.id,acc)
       case _ => acc
     }
 }

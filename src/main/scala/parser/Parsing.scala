@@ -1,6 +1,8 @@
 package parser
 
 import syntax._
+
+import parser.PartialParsingTable
 import ParsingTable.ParsingTableContext
 import ParsingTable.ParsingTableInstruction
 import ParsingTable.ParsingTableContext._
@@ -31,7 +33,7 @@ class Parsing {
         if(conflicts.nonEmpty){
             throw Exception(conflicts.toString)
         }
-        ParsingTable[A](s.id,table.toMap,nullable.toMap)
+        PartialParsingTable[A](s.id,table.toMap,nullable.toMap)
     }
 
     private def cleaning = {
@@ -72,7 +74,7 @@ class Parsing {
 
             case Transform(inner,f) => 
                 addChildToParent(inner.id,s.id)
-                prop.transform = Some(f.asInstanceOf[(Any) => Any])
+                prop.transform = false
                 setUp(inner.asInstanceOf[Syntax[Any]]) // TODO tailrec
 
             case Disjunction(left, right) =>
@@ -155,7 +157,7 @@ class Parsing {
 
                         // Parsing Table
                         child.first.foreach { k =>
-                            table.put((s.id,k), NonTerminal(inner.id, ApplyF(f.asInstanceOf[Any => Any])))
+                            table.put((s.id,k), NonTerminal(inner.id, ApplyF(s.id)))
                         }
 
                         // Nullable Table
@@ -326,7 +328,7 @@ class Parsing {
     case class Properties(val syntax: Syntax[Any]){
         val first: Set[Kind] = Set()
         val snf: Set[Kind] = Set()
-        var transform: Option[(Any) => Any] = None
+        var transform: Boolean = false
         var nullable:Option[Any] = None
         var isProductive:Boolean = true
         var hasConflict = false

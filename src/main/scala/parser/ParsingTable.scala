@@ -10,7 +10,7 @@ import ParsingTable.ParsingTableContext._
 import ParsingTable.ParsingTableInstruction._
 import ParsingTable._
 
-case class ParsingTable[A](entry: Int, table: Map[(Int,Kind), ParsingTableInstruction], nullable:Map[Int,Any]){
+case class ParsingTable[A](entry: Int, table: Map[(Int,Kind), ParsingTableInstruction], nullable:Map[Int,Any], ft:Map[Int,(Any => Any)]){
     private type Context = List[ParsingTableContext]
     private type Instruction = ParsingTableInstruction
 
@@ -87,7 +87,7 @@ case class ParsingTable[A](entry: Int, table: Map[(Int,Kind), ParsingTableInstru
     private def plugValue(v:Any, c:Context): Either[Any,(Int,Context)] = {
         c match {
             case Nil => Left(v)
-            case ApplyF(f)::cs => plugValue(f(v),cs)
+            case ApplyF(fId)::cs => plugValue(ft(fId)(v),cs)
             case PrependedBy(vp)::cs => plugValue((vp,v),cs)
             case FollowedBy(s)::cs => Right((s,PrependedBy(v)::cs))
             case Passed::cs => plugValue(v,cs)
@@ -112,7 +112,7 @@ object ParsingTable{
     }
 
     enum ParsingTableContext {
-        case ApplyF(f: (Any) => Any) extends ParsingTableContext
+        case ApplyF(id: Int) extends ParsingTableContext
         case PrependedBy(v: Any) extends ParsingTableContext
         case FollowedBy(s: Int) extends ParsingTableContext
         case Passed extends ParsingTableContext
@@ -160,11 +160,4 @@ object ParsingTable{
     case class ParsedSuccessfullyWithRest[A](v: A, tokens:List[Token]) extends ParsingResult[A]
     case class UnexpectedEnd[A](expected: Set[Kind]) extends ParsingResult[A]
     case class UnexpectedToken[A](k: Kind, expected: Set[Kind]) extends ParsingResult[A]
-
-    given ParsingTableToExpr[A: Type: ToExpr](using a:ToExpr[Any]): ToExpr[ParsingTable[A]] with {
-        import Kind._
-        def apply(pt: ParsingTable[A])(using Quotes): Expr[ParsingTable[A]] = {
-            '{ParsingTable(${Expr(pt.entry)},${Expr(pt.table)},${Expr(pt.nullable)})} 
-        }
-    }
 }
