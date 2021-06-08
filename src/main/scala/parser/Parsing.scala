@@ -10,7 +10,7 @@ import scala.quoted._
 import scala.collection.mutable.{Set,Map}
 import scala.annotation.tailrec
 
-object Parsing {
+class Parsing {
     type Kind = syntax.TokensAndKinds.Kind
     type Token = syntax.TokensAndKinds.Token
 
@@ -27,7 +27,6 @@ object Parsing {
     def apply[A](s: Syntax[A]) = {        
         cleaning
         setUp(s.asInstanceOf[Syntax[Any]])
-        //throw Exception(s"$ready\n$idToProperties\n$childToParent\n$conflicts")
         propagate
         if(conflicts.nonEmpty){
             throw Exception(conflicts.toString)

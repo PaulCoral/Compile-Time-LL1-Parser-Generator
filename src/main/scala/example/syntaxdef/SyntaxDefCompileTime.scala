@@ -17,7 +17,9 @@ inline def parsingTable = ${init}
 def init[A](using Quotes) = {
     val syntax = SyntaxDef.sum
     
-    val pt = Parsing(syntax)
+    val parsing = new Parsing
+
+    val pt = parsing(syntax)
     //Expr(pt(tokens).toString)
     Expr(pt)
 }

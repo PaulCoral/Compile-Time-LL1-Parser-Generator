@@ -1,12 +1,12 @@
 package syntax
 
-import scala.collection.mutable.Map
+import scala.annotation.tailrec
 
 import TokensAndKinds._
  
 
-sealed trait Syntax[A]{
-  val id = Syntax.nextId
+sealed trait Syntax[A](using idc:IdCounter){
+  val id = idc.nextId
 
   /**
    * Disjunction operator
@@ -53,71 +53,74 @@ sealed trait Syntax[A]{
 }
 
 object Syntax {
-  private var id : Int = 0
+  def accept[A](k:Kind)(f: PartialFunction[Token,A])(using IdCounter): Syntax[A] = elem(k).map(f)
 
-  private def nextId:Int = {
-    val prev: Int = id
-    id = id + 1
-    prev
-  }
-
-  def accept[A](k:Kind)(f: PartialFunction[Token,A]): Syntax[A] = elem(k).map(f)
-
-  def epsilon[A](e: A): Syntax[A] = Success(e)
+  def epsilon[A](e: A)(using IdCounter): Syntax[A] = Success(e)
   
-  def elem(k: Kind): Syntax[Token] = Elem(k)
+  def elem(k: Kind)(using IdCounter): Syntax[Token] = Elem(k)
 
-  def recursive[A](syntax: => Syntax[A]): Syntax[A] = Recursive(syntax)
+  def recursive[A](syntax: => Syntax[A])(using IdCounter): Syntax[A] = Recursive(syntax)
 
+  import scala.collection.mutable.Set
+  def idToFunc(s: Syntax[?], ids:Set[Int] = Set(),acc: Map[Int,(Any => Any)] = Map()):Map[Int, (Any => Any)] = 
+    val nids = ids += s.id
+    s match {
+      case x if !(ids.contains(x.id)) => acc
+      case Transform(i,f) => idToFunc(i, nids,acc + (s.id -> f.asInstanceOf[Any => Any]))
+      case Sequence(l,r) =>  idToFunc(r,nids,idToFunc(l,nids,acc))
+      case Disjunction(l,r) => idToFunc(r,nids,idToFunc(l,nids,acc))
+      case Recursive(i) => idToFunc(i,nids,acc)
+      case _ => acc
+    }
 }
 
 
 /**
  * Successful parsing
  */
-case class Success[A](value: A) extends Syntax[A]
+case class Success[A](value: A)(using IdCounter) extends Syntax[A]
   
 
 /**
  * Failed parsing
  */
-case class Failure[A]() extends Syntax[A]
+case class Failure[A]()(using IdCounter) extends Syntax[A]
   
 
 /**
  * The parsing of a single Token
  */
-case class Elem(e: Kind) extends Syntax[Token]
+case class Elem(e: Kind)(using IdCounter) extends Syntax[Token]
   
 
 /**
  * Transformation by applying a function on the result of a successful parsing
  */
-case class Transform[A,B](inner: Syntax[A],f : A => B) extends Syntax[B]
+case class Transform[A,B](inner: Syntax[A],f : A => B)(using IdCounter) extends Syntax[B]
   
 
 /**
  * The parsing of a sequence of Token
  */
-case class Sequence[A, B](left: Syntax[A], right: Syntax[B]) extends Syntax[(A, B)]
+case class Sequence[A, B](left: Syntax[A], right: Syntax[B])(using IdCounter) extends Syntax[(A, B)]
 
 
 /**
  * The parsing of a disjunction of Token
  */
-case class Disjunction[A](left: Syntax[A], right: Syntax[A]) extends Syntax[A]
+case class Disjunction[A](left: Syntax[A], right: Syntax[A])(using IdCounter) extends Syntax[A]
   
 
 /**
  * Recursive construction of a syntaxs
  */
-class Recursive[A](syntax: => Syntax[A]) extends Syntax[A]{
+class Recursive[A](syntax: => Syntax[A])(using IdCounter) extends Syntax[A]{
   lazy val inner = syntax
   override def toString = s"<Recursive_id:$id>"
 }
 
 object Recursive {
-  def apply[A](syntax: => Syntax[A]): Recursive[A] = new Recursive(syntax)
+  def apply[A](syntax: => Syntax[A])(using IdCounter): Recursive[A] = new Recursive(syntax)
 
   def unapply[A](that: Syntax[A]): Option[Syntax[A]] = {
     if (that.isInstanceOf[Recursive[_]]) {

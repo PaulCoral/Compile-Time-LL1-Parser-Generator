@@ -36,7 +36,7 @@ case class ParsingTable[A](entry: Int, table: Map[(Int,Kind), ParsingTableInstru
                         // nullable path taken
                         plugValue(v,c) match {
                             case Left(value) => 
-                                // context is empty, parsing terminated
+                                // context is empty, parsing finished
                                 result(value,tokens)
                             case Right((s2,c2)) => 
                                 // new found syntax, value saved in new context
@@ -119,9 +119,17 @@ object ParsingTable{
     }
 
     object ParsingTableContext {
+        private given ToExpr[(Any => Any)] with {
+            def apply(f : Any => Any)(using Quotes) = 
+                '{(a:Any) => 
+                    val b = a.asInstanceOf[(Int,Int)]
+                    b._1 + b._2
+                }
+        }
+
         given ParsingTableContextToExpr(using ToExpr[Any]) : ToExpr[ParsingTableContext] with {
             def apply(ptc:ParsingTableContext)(using Quotes) = ptc match{
-                case ApplyF(f) => '{Passed} // TODO
+                case ApplyF(f) => '{ApplyF(${Expr(f)})}
                 case PrependedBy(v) => '{PrependedBy(${Expr(v)})}
                 case FollowedBy(s) => '{FollowedBy(${Expr(s)})}
                 case Passed => '{Passed}
