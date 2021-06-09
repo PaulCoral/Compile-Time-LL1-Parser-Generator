@@ -9,7 +9,7 @@ sealed trait Syntax[A,Token,Kind](using idc:IdCounter){
   /**
    * Disjunction operator
    */
-  infix def |(that: Syntax[A,Token,Kind]):Syntax[A,Token,Kind] = 
+  private[ll1compiletime] infix def |(that: Syntax[A,Token,Kind]):Syntax[A,Token,Kind] = 
     (this, that) match
       case (Failure(), _) => that
       case (_,Failure()) => this
@@ -19,7 +19,7 @@ sealed trait Syntax[A,Token,Kind](using idc:IdCounter){
   /**
    * Sequence operator
    */
-  infix def ~[B](that: Syntax[B,Token,Kind]):Syntax[(A,B),Token,Kind] = 
+  private[ll1compiletime] infix def ~[B](that: Syntax[B,Token,Kind]):Syntax[(A,B),Token,Kind] = 
     (this, that) match
       case (Failure(),_) => Failure()
       case (_, Failure()) => Failure()
@@ -28,7 +28,7 @@ sealed trait Syntax[A,Token,Kind](using idc:IdCounter){
   /**
    * Sequence operator, keeping the left value
    */
-  infix def ~<~[B](that: Syntax[B,Token,Kind]):Syntax[A,Token,Kind] = 
+  private[ll1compiletime] infix def ~<~[B](that: Syntax[B,Token,Kind]):Syntax[A,Token,Kind] = 
     (this, that) match
       case (Failure(),_) => Failure()
       case (_, Failure()) => Failure()
@@ -37,7 +37,7 @@ sealed trait Syntax[A,Token,Kind](using idc:IdCounter){
   /**
    * Sequence operator, keeping the right value
    */
-  infix def ~>~[B](that: Syntax[B,Token,Kind]):Syntax[B,Token,Kind] = 
+  private[ll1compiletime] infix def ~>~[B](that: Syntax[B,Token,Kind]):Syntax[B,Token,Kind] = 
     (this, that) match
       case (Failure(),_) => Failure()
       case (_, Failure()) => Failure()
@@ -46,7 +46,7 @@ sealed trait Syntax[A,Token,Kind](using idc:IdCounter){
   /**
    * Map this syntax to another
    */
-  def map[B](f: A => B): Syntax[B,Token,Kind] =
+  private[ll1compiletime] def map[B](f: A => B): Syntax[B,Token,Kind] =
     Transform(this, f)
 }
 
