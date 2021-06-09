@@ -3,8 +3,14 @@ package syntax
 import parser.PartialParsingTable
 import parser.ParsingTable
 
-trait SyntaxDefinition[A] {
-    lazy val entryPoint:Syntax[A]
+import scala.quoted.ToExpr
 
-    inline def parse:ParsingTable[A]
+trait SyntaxDefinition[A,Token,Kind] {
+    def getKind(t: Token):Kind
+
+    lazy val entryPoint:Syntax[A,Token,Kind]
+
+    inline def parse:ParsingTable[A,Token,Kind]
+
+    given anyToExpr : ToExpr[Any]
 }

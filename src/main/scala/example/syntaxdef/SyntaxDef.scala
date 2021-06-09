@@ -3,8 +3,6 @@ package example.syntaxdef
 import syntax.IdCounter
 import syntax.Syntax
 import syntax.Syntax._
-import syntax.TokensAndKinds.Kind._
-import syntax.TokensAndKinds.Token._
 import syntax.getPos
 import syntax.SyntaxDefinition
 
@@ -15,24 +13,32 @@ import parser._
 import scala.quoted._
 
 
-object SyntaxDef extends SyntaxDefinition[(Int,Int)] {
+object SyntaxDef extends SyntaxDefinition[Int,MyToken,MyKind] {
+    import MyToken._
+    import MyKind._
+
+    type Token = MyToken
+    type Kind = MyKind
+
+    def getKind(t:MyToken):MyKind = MyToken.getKind(t)
+
     given id:IdCounter = new IdCounter()
 
-    lazy val elemInt: Syntax[Int] = accept(IntKind){ case IntLitToken(v) => v }
+    lazy val elemInt: Syntax[Int,Token,Kind] = accept(IntKind){ case IntLitToken(v) => v }
 
-    lazy val elemId: Syntax[String] = accept(IdentifierKind){ case IdentifierToken(v) => v }
+    lazy val elemId: Syntax[String,Token,Kind] = accept(IdentifierKind){ case IdentifierToken(v) => v }
 
-    lazy val var_assignation:Syntax[String] = (elemId ~ elemInt).map{ case (i,v) => s"$i = $v" }
+    lazy val var_assignation:Syntax[String,Token,Kind] = (elemId ~ elemInt).map{ case (i,v) => s"$i = $v" }
 
-    lazy val many_var_assignation:Syntax[String] = (var_assignation ~ (var_assignation)).map{ case (v1,v2) => s"$v1\n$v2" }
+    lazy val many_var_assignation:Syntax[String,Token,Kind] = (var_assignation ~ (var_assignation)).map{ case (v1,v2) => s"$v1\n$v2" }
 
-    lazy val rec_sum: Syntax[Int] = recursive{ sum | epsilon(0) }
+    lazy val rec_sum: Syntax[Int,Token,Kind] = recursive{ sum | epsilon(0) }
 
-    lazy val sum: Syntax[Int] = (elemInt ~ rec_sum).map{ case (a,b) => a + b }
+    lazy val sum: Syntax[Int,Token,Kind] = (elemInt ~ rec_sum).map{ case (a,b) => a + b }
 
     lazy val innerManyAs = epsilon(()) | elem(IntKind) ~>~ manyAs
 
-    lazy val manyAs: Syntax[Unit] = recursive { innerManyAs }
+    lazy val manyAs: Syntax[Unit,Token,Kind] = recursive { innerManyAs }
 
     lazy val nullableConflict = (epsilon(0) | epsilon(1))|(epsilon(0)|epsilon(1))
 
@@ -45,22 +51,17 @@ object SyntaxDef extends SyntaxDefinition[(Int,Int)] {
     lazy val complexFirstFirst = (((elemId ~>~ elemInt) | (elemInt ~>~ elemInt)) | ((elemId ~>~ elemInt) | (elemInt ~>~ elemInt)))
 
 
-    lazy val entryPoint = snfConflict
+    lazy val entryPoint = sum
 
-    inline def parse = getPartialParsingTable.withFunctionTable(entryPoint)
+    inline def parse = getPartialParsingTable.withFunctionTable(sum,getKind)
 
 
-    given ToExpr[Any] with {
+    given anyToExpr:ToExpr[Any] with {
         def apply(a: Any)(using Quotes) = a match {
             case x:Int => Expr(x)
             case x:String => Expr(x)
-            case _:Unit => '{()}
             case _ => throw MatchError(a)
         }
-    }
-
-    given ToExpr[Unit] with {
-        def apply(u: Unit)(using Quotes) = '{()}
     }
 }
 

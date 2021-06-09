@@ -1,17 +1,15 @@
 package syntax
 
 import scala.annotation.tailrec
-
-import TokensAndKinds._
  
 
-sealed trait Syntax[A](using idc:IdCounter){
+sealed trait Syntax[A,Token,Kind](using idc:IdCounter){
   val id = idc.nextId
 
   /**
    * Disjunction operator
    */
-  infix def |(that: Syntax[A]):Syntax[A] = 
+  infix def |(that: Syntax[A,Token,Kind]):Syntax[A,Token,Kind] = 
     (this, that) match
       case (Failure(), _) => that
       case (_,Failure()) => this
@@ -21,7 +19,7 @@ sealed trait Syntax[A](using idc:IdCounter){
   /**
    * Sequence operator
    */
-  infix def ~[B](that: Syntax[B]):Syntax[(A,B)] = 
+  infix def ~[B](that: Syntax[B,Token,Kind]):Syntax[(A,B),Token,Kind] = 
     (this, that) match
       case (Failure(),_) => Failure()
       case (_, Failure()) => Failure()
@@ -30,7 +28,7 @@ sealed trait Syntax[A](using idc:IdCounter){
   /**
    * Sequence operator, keeping the left value
    */
-  infix def ~<~[B](that: Syntax[B]):Syntax[A] = 
+  infix def ~<~[B](that: Syntax[B,Token,Kind]):Syntax[A,Token,Kind] = 
     (this, that) match
       case (Failure(),_) => Failure()
       case (_, Failure()) => Failure()
@@ -39,7 +37,7 @@ sealed trait Syntax[A](using idc:IdCounter){
   /**
    * Sequence operator, keeping the right value
    */
-  infix def ~>~[B](that: Syntax[B]):Syntax[B] = 
+  infix def ~>~[B](that: Syntax[B,Token,Kind]):Syntax[B,Token,Kind] = 
     (this, that) match
       case (Failure(),_) => Failure()
       case (_, Failure()) => Failure()
@@ -48,21 +46,21 @@ sealed trait Syntax[A](using idc:IdCounter){
   /**
    * Map this syntax to another
    */
-  def map[B](f: A => B): Syntax[B] =
+  def map[B](f: A => B): Syntax[B,Token,Kind] =
     Transform(this, f)
 }
 
 object Syntax {
-  def accept[A](k:Kind)(f: PartialFunction[Token,A])(using IdCounter): Syntax[A] = elem(k).map(f)
+  def accept[A,Token,Kind](k:Kind)(f: PartialFunction[Token,A])(using IdCounter): Syntax[A,Token,Kind] = elem(k).map(f)
 
-  def epsilon[A](e: A)(using IdCounter): Syntax[A] = Success(e)
+  def epsilon[A,Token,Kind](e: A)(using IdCounter): Syntax[A,Token,Kind] = Success[A,Token,Kind](e)
   
-  def elem(k: Kind)(using IdCounter): Syntax[Token] = Elem(k)
+  def elem[Kind,Token](k: Kind)(using IdCounter): Syntax[Token,Token,Kind] = Elem(k)
 
-  def recursive[A](syntax: => Syntax[A])(using IdCounter): Syntax[A] = Recursive(syntax)
+  def recursive[A,Token,Kind](syntax: => Syntax[A,Token,Kind])(using IdCounter): Syntax[A,Token,Kind] = Recursive(syntax)
 
   import scala.collection.mutable.Set
-  def idToFunc(s: Syntax[?], ids:Set[Int] = Set(),acc: Map[Int,(Any => Any)] = Map()):Map[Int, (Any => Any)] = 
+  def idToFunc[Token,Kind](s: Syntax[?,Token,Kind], ids:Set[Int] = Set(),acc: Map[Int,(Any => Any)] = Map()):Map[Int, (Any => Any)] = 
     s match {
       case x if ids.contains(x.id) => acc
       case Transform(i,f) => idToFunc(i, ids += s.id,acc + (s.id -> f.asInstanceOf[Any => Any]))
@@ -77,53 +75,53 @@ object Syntax {
 /**
  * Successful parsing
  */
-case class Success[A](value: A)(using IdCounter) extends Syntax[A]
+case class Success[A,Token,Kind](value: A)(using IdCounter) extends Syntax[A,Token,Kind]
   
 
 /**
  * Failed parsing
  */
-case class Failure[A]()(using IdCounter) extends Syntax[A]
+case class Failure[A,Token,Kind]()(using IdCounter) extends Syntax[A,Token,Kind]
   
 
 /**
  * The parsing of a single Token
  */
-case class Elem(e: Kind)(using IdCounter) extends Syntax[Token]
+case class Elem[Token,Kind](e: Kind)(using IdCounter) extends Syntax[Token,Token,Kind]
   
 
 /**
  * Transformation by applying a function on the result of a successful parsing
  */
-case class Transform[A,B](inner: Syntax[A],f : A => B)(using IdCounter) extends Syntax[B]
+case class Transform[A,B,Token,Kind](inner: Syntax[A,Token,Kind],f : A => B)(using IdCounter) extends Syntax[B,Token,Kind]
   
 
 /**
  * The parsing of a sequence of Token
  */
-case class Sequence[A, B](left: Syntax[A], right: Syntax[B])(using IdCounter) extends Syntax[(A, B)]
+case class Sequence[A, B,Token,Kind](left: Syntax[A,Token,Kind], right: Syntax[B,Token,Kind])(using IdCounter) extends Syntax[(A, B),Token,Kind]
 
 
 /**
  * The parsing of a disjunction of Token
  */
-case class Disjunction[A](left: Syntax[A], right: Syntax[A])(using IdCounter) extends Syntax[A]
+case class Disjunction[A,Token,Kind](left: Syntax[A,Token,Kind], right: Syntax[A,Token,Kind])(using IdCounter) extends Syntax[A,Token,Kind]
   
 
 /**
  * Recursive construction of a syntaxs
  */
-class Recursive[A](syntax: => Syntax[A])(using IdCounter) extends Syntax[A]{
+class Recursive[A,Token,Kind](syntax: => Syntax[A,Token,Kind])(using IdCounter) extends Syntax[A,Token,Kind]{
   lazy val inner = syntax
   override def toString = s"<Recursive_id:$id>"
 }
 
 object Recursive {
-  def apply[A](syntax: => Syntax[A])(using IdCounter): Recursive[A] = new Recursive(syntax)
+  def apply[A,Token,Kind](syntax: => Syntax[A,Token,Kind])(using IdCounter): Recursive[A,Token,Kind] = new Recursive(syntax)
 
-  def unapply[A](that: Syntax[A]): Option[Syntax[A]] = {
-    if (that.isInstanceOf[Recursive[_]]) {
-      val other = that.asInstanceOf[Recursive[A]]
+  def unapply[A,Token,Kind](that: Syntax[A,Token,Kind]): Option[Syntax[A,Token,Kind]] = {
+    if (that.isInstanceOf[Recursive[?,Token,Kind]]) {
+      val other = that.asInstanceOf[Recursive[A,Token,Kind]]
       Some(other.inner)
     } else {
       None

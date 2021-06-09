@@ -1,6 +1,5 @@
 import example.syntaxdef._
-
-import syntax.TokensAndKinds.Token._
+import MyToken._
 
 import parser.ParsingTable
 

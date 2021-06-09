@@ -12,9 +12,7 @@ import scala.quoted._
 import scala.collection.mutable.{Set,Map}
 import scala.annotation.tailrec
 
-class Parsing {
-    type Kind = syntax.TokensAndKinds.Kind
-    type Token = syntax.TokensAndKinds.Token
+class Parsing[Kind] {
 
     private val ready: Set[Int] = Set()
     private val rec: Set[Int] = Set()
@@ -26,14 +24,14 @@ class Parsing {
     private val table: Map[(Int,Kind),ParsingTableInstruction] = Map()
     private val nullable: Map[Int,Any] = Map()
 
-    def apply[A](s: Syntax[A]):PartialParsingTable[A] = {        
+    def apply[A](s: Syntax[A,?,Kind]):PartialParsingTable[A,Kind] = {        
         cleaning
-        setUp(s.asInstanceOf[Syntax[Any]])
+        setUp(s.asInstanceOf[Syntax[Any,?,Kind]])
         propagate
         if(conflicts.nonEmpty){
             throw Exception(conflicts.toString)
         }
-        PartialParsingTable[A](s.id,table.toMap,nullable.toMap)
+        PartialParsingTable[A,Kind](s.id,table.toMap,nullable.toMap)
     }
 
     private def cleaning = {
@@ -52,7 +50,7 @@ class Parsing {
         }
     }
 
-    private def setUp(s: Syntax[Any]):Unit = 
+    private def setUp(s: Syntax[Any,?,Kind]):Unit = 
         val prop = Properties(s)
         idToProperties.put(s.id, prop)
         s match {
@@ -67,7 +65,7 @@ class Parsing {
                 ready.add(s.id)
                 prop.update(true)
 
-            case Elem(k) => 
+            case Elem(k:Kind) => 
                 prop.first.add(k)
                 ready.add(s.id)
                 prop.update(true)
@@ -75,7 +73,7 @@ class Parsing {
             case Transform(inner,f) => 
                 addChildToParent(inner.id,s.id)
                 prop.transform = false
-                setUp(inner.asInstanceOf[Syntax[Any]]) // TODO tailrec
+                setUp(inner.asInstanceOf[Syntax[Any,?,Kind]]) // TODO tailrec
 
             case Disjunction(left, right) =>
                 addChildToParent(left.id,s.id)
@@ -87,8 +85,8 @@ class Parsing {
             case Sequence(left,right) =>
                 addChildToParent(left.id,s.id)
                 addChildToParent(right.id,s.id)
-                setUp(left.asInstanceOf[Syntax[Any]]) // TODO tailrec
-                setUp(right.asInstanceOf[Syntax[Any]]) // TODO tailrec
+                setUp(left.asInstanceOf[Syntax[Any,?,Kind]]) // TODO tailrec
+                setUp(right.asInstanceOf[Syntax[Any,?,Kind]]) // TODO tailrec
 
             case Recursive(inner) => 
                 if(!(rec.contains(s.id))) then
@@ -325,7 +323,7 @@ class Parsing {
             t.foldLeft(s"$h")((str,elem) => str + s", $elem")
     }
 
-    case class Properties(val syntax: Syntax[Any]){
+    case class Properties(val syntax: Syntax[Any,?,Kind]){
         val first: Set[Kind] = Set()
         val snf: Set[Kind] = Set()
         var transform: Boolean = false

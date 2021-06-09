@@ -4,13 +4,12 @@ package parser
 import scala.quoted._
 import scala.quoted.ToExpr._
 
-
-import syntax.TokensAndKinds._
 import ParsingTable.ParsingTableContext._
 import ParsingTable.ParsingTableInstruction._
 import ParsingTable._
 
-case class ParsingTable[A](entry: Int, table: Map[(Int,Kind), ParsingTableInstruction], nullable:Map[Int,Any], ft:Map[Int,(Any => Any)]){
+case class ParsingTable[A,Token,Kind](entry: Int, table: Map[(Int,Kind), ParsingTableInstruction], nullable:Map[Int,Any], ft:Map[Int,(Any => Any)],getKind: Token => Kind){
+
     private type Context = List[ParsingTableContext]
     private type Instruction = ParsingTableInstruction
 
@@ -31,7 +30,7 @@ case class ParsingTable[A](entry: Int, table: Map[(Int,Kind), ParsingTableInstru
                 }
             case t::ts => {
                 locate(t,s,c) match {
-                    case None => UnexpectedToken(t.toKind,getFirstSetOfSyntax(s)) // no match, not nullable
+                    case None => UnexpectedToken(getKind(t),getFirstSetOfSyntax(s)) // no match, not nullable
                     case Some(Left(v)) => 
                         // nullable path taken
                         plugValue(v,c) match {
@@ -69,7 +68,7 @@ case class ParsingTable[A](entry: Int, table: Map[(Int,Kind), ParsingTableInstru
     }
 
     private def locate(t: Token, s: Int, c: Context): Option[Either[Any, Instruction]] =
-        table.get((s,t.toKind)) match {
+        table.get((s,getKind(t))) match {
             case None => 
                 nullable.get(s) match {
                     case None => None
@@ -138,12 +137,7 @@ object ParsingTable{
     }
 
     sealed trait ParsingResult[A] {
-        def toType[B]:ParsingResult[B] = this match {
-            case ParsedSuccessfully(v) => ParsedSuccessfully(v.asInstanceOf[B])
-            case ParsedSuccessfullyWithRest(v,r) => ParsedSuccessfullyWithRest(v.asInstanceOf[B],r)
-            case UnexpectedEnd(e) => UnexpectedEnd[B](e)
-            case UnexpectedToken(k,e) => UnexpectedToken[B](k,e)
-        }
+        def toType[B]:ParsingResult[B]
 
         override def toString = this match {
             case ParsedSuccessfully(v) =>
@@ -156,8 +150,16 @@ object ParsingTable{
                 s"Unexpected Token of Kind $k, expected kind : $e"
         }
     }
-    case class ParsedSuccessfully[A](v: A) extends ParsingResult[A]
-    case class ParsedSuccessfullyWithRest[A](v: A, tokens:List[Token]) extends ParsingResult[A]
-    case class UnexpectedEnd[A](expected: Set[Kind]) extends ParsingResult[A]
-    case class UnexpectedToken[A](k: Kind, expected: Set[Kind]) extends ParsingResult[A]
+    case class ParsedSuccessfully[A](v: A) extends ParsingResult[A] {
+        def toType[B]:ParsingResult[B] = ParsedSuccessfully(v.asInstanceOf[B])
+    }
+    case class ParsedSuccessfullyWithRest[A,Token](v: A, tokens:List[Token]) extends ParsingResult[A]{
+        def toType[B]:ParsingResult[B] = ParsedSuccessfullyWithRest(v.asInstanceOf[B],tokens)
+    }
+    case class UnexpectedEnd[A,Kind](expected: Set[Kind]) extends ParsingResult[A]{
+        def toType[B]:ParsingResult[B] = UnexpectedEnd[B,Kind](expected)
+    }
+    case class UnexpectedToken[A,Kind](k: Kind, expected: Set[Kind]) extends ParsingResult[A]{
+        def toType[B]:ParsingResult[B] = UnexpectedToken[B,Kind](k,expected)
+    }
 }
