@@ -1,8 +1,7 @@
-package parser
+package ll1compiletime.parser
 
 import syntax._
 
-import parser.PartialParsingTable
 import ParsingTable.ParsingTableContext
 import ParsingTable.ParsingTableInstruction
 import ParsingTable.ParsingTableContext._

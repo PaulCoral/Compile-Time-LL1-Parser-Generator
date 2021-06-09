@@ -1,4 +1,4 @@
-package syntax
+package ll1compiletime.syntax
 
 class IdCounter {
     private var id = 0

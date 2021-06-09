@@ -1,4 +1,4 @@
-package parser
+package ll1compiletime.parser
 
 import ParsingTable.ParsingTableInstruction
 import syntax.Syntax

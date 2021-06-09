@@ -1,4 +1,4 @@
-package syntax
+package ll1compiletime.syntax
 
 import scala.annotation.tailrec
  

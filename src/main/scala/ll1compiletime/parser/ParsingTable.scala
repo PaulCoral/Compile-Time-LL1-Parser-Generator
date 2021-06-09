@@ -1,4 +1,4 @@
-package parser
+package ll1compiletime.parser
 
 
 import scala.quoted._
