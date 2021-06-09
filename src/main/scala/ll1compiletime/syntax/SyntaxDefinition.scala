@@ -35,7 +35,7 @@ trait SyntaxDefinition[A,T,K] {
     def recursive[B](syntax: => CSyntax[B])(using IdCounter): CSyntax[B] = 
         Syntax.recursive[B,Token,Kind](syntax)
 
-    extension [X](thiz: CSyntax[X])
+    extension [X](thiz: CSyntax[X]) {
         infix def |(that: CSyntax[X])(using IdCounter):CSyntax[X] = 
             thiz.|(that)
 
@@ -58,5 +58,6 @@ trait SyntaxDefinition[A,T,K] {
          */
         def map[B](f: X => B): CSyntax[B] =
             thiz.map(f)
+    }
         
 }
