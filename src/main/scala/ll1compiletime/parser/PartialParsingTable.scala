@@ -1,10 +1,11 @@
 package ll1compiletime.parser
 
 import ParsingTable.ParsingTableInstruction
-import syntax.Syntax
+import ll1compiletime.syntax.Syntax
+import ll1compiletime.syntax.SyntaxDefinition
 
 import scala.quoted._
-import syntax.SyntaxDefinition
+
 
 
 case class PartialParsingTable[A,Kind](entry: Int, table: Map[(Int,Kind), ParsingTableInstruction], nullable:Map[Int,Any]){

@@ -1,6 +1,6 @@
 package ll1compiletime.parser
 
-import syntax._
+import ll1compiletime.syntax._
 
 import ParsingTable.ParsingTableContext
 import ParsingTable.ParsingTableInstruction

@@ -1,7 +1,7 @@
 package ll1compiletime.syntax
 
-import parser.PartialParsingTable
-import parser.ParsingTable
+import ll1compiletime.parser.PartialParsingTable
+import ll1compiletime.parser.ParsingTable
 
 import scala.quoted.ToExpr
 
