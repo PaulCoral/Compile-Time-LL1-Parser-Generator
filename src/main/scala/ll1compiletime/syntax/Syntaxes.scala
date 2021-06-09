@@ -51,13 +51,13 @@ sealed trait Syntax[A,Token,Kind](using idc:IdCounter){
 }
 
 object Syntax {
-  def accept[A,Token,Kind](k:Kind)(f: PartialFunction[Token,A])(using IdCounter): Syntax[A,Token,Kind] = elem(k).map(f)
+  private[ll1compiletime] def accept[A,Token,Kind](k:Kind)(f: PartialFunction[Token,A])(using IdCounter): Syntax[A,Token,Kind] = elem(k).map(f)
 
-  def epsilon[A,Token,Kind](e: A)(using IdCounter): Syntax[A,Token,Kind] = Success[A,Token,Kind](e)
+  private[ll1compiletime] def epsilon[A,Token,Kind](e: A)(using IdCounter): Syntax[A,Token,Kind] = Success[A,Token,Kind](e)
   
-  def elem[Kind,Token](k: Kind)(using IdCounter): Syntax[Token,Token,Kind] = Elem(k)
+  private[ll1compiletime] def elem[Token,Kind](k: Kind)(using IdCounter): Syntax[Token,Token,Kind] = Elem(k)
 
-  def recursive[A,Token,Kind](syntax: => Syntax[A,Token,Kind])(using IdCounter): Syntax[A,Token,Kind] = Recursive(syntax)
+  private[ll1compiletime] def recursive[A,Token,Kind](syntax: => Syntax[A,Token,Kind])(using IdCounter): Syntax[A,Token,Kind] = Recursive(syntax)
 
   import scala.collection.mutable.Set
   def idToFunc[Token,Kind](s: Syntax[?,Token,Kind], ids:Set[Int] = Set(),acc: Map[Int,(Any => Any)] = Map()):Map[Int, (Any => Any)] = 
