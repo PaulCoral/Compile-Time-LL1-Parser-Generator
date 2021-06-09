@@ -17,9 +17,6 @@ object SyntaxDef extends SyntaxDefinition[Int,MyToken,MyKind] {
     import MyToken._
     import MyKind._
 
-    type Token = MyToken
-    type Kind = MyKind
-
     def getKind(t:MyToken):MyKind = MyToken.getKind(t)
 
     given id:IdCounter = new IdCounter()
@@ -53,7 +50,13 @@ object SyntaxDef extends SyntaxDefinition[Int,MyToken,MyKind] {
 
     lazy val entryPoint = sum
 
-    inline def parse = getPartialParsingTable.withFunctionTable(sum,getKind)
+    inline def parse = getPartialParsingTable.withFunctionTable(entryPoint,getKind)
+
+    def parseRuntime = {
+        val parsing = new Parsing[Kind]
+        parsing(entryPoint)
+        getPartialParsingTable.withFunctionTable(entryPoint,getKind)
+    }
 
 
     given anyToExpr:ToExpr[Any] with {

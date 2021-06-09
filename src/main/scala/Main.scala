@@ -4,6 +4,6 @@ import MyToken._
 import parser.ParsingTable
 
 @main def hello: Unit =
-    val a = SyntaxDef.parse
-    val tokens = (1 to 3).map(IntLitToken(_)).toList
+    val a = SyntaxDef.parseRuntime
+    val tokens = (1 to 10000).map(IntLitToken(_)).toList
     println(s"Result : ${a(tokens)}")

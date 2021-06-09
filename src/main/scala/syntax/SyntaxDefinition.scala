@@ -5,7 +5,10 @@ import parser.ParsingTable
 
 import scala.quoted.ToExpr
 
-trait SyntaxDefinition[A,Token,Kind] {
+trait SyntaxDefinition[A,T,K] {
+    type Token = T
+    type Kind = K
+
     def getKind(t: Token):Kind
 
     lazy val entryPoint:Syntax[A,Token,Kind]
