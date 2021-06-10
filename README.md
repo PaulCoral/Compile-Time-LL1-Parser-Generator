@@ -1,8 +1,9 @@
-## sbt project compiled with Scala 3
+### Some Tests
+- [Tests : Compile-time reduction of ASTs using Metaprogramming](https://gitlab.epfl.ch/pcoral/bachelor-project-lara-personal-information/-/tree/AST_macro_tests)
 
-### Usage
-
-This is a normal sbt project. You can compile code with `sbt compile`, run it with `sbt run`, and `sbt console` will start a Scala 3 REPL.
-
-For more information on the sbt-dotty plugin, see the
-[dotty-example-project](https://github.com/lampepfl/dotty-example-project/blob/master/README.md).
+### Some Readings
+- [Scall1on](https://github.com/epfl-lara/scallion)
+- [EverParse](https://project-everest.github.io/assets/everparse.pdf)
+- [Scala3 Metaprogramming](https://dotty.epfl.ch/docs/Metaprogramming/index.html)
+- [Isomorphism/Reverse parsing+pretty-printing](https://www.informatik.uni-marburg.de/~rendel/unparse/rendel10invertible.pdf)
+- [Other LARA student projects](https://gitlab.epfl.ch/kuncak/student-projects)
