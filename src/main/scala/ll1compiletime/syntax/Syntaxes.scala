@@ -48,12 +48,18 @@ sealed trait Syntax[A,Token,Kind](using idc:IdCounter){
    */
   private[ll1compiletime] def map[B](f: A => B): Syntax[B,Token,Kind] =
     Transform(this, f)
+
+
+  private[ll1compiletime] def opt: Syntax[Option[A],Token,Kind] =
+    this.map(Some(_)) | (Syntax.epsilon(None))
 }
 
 object Syntax {
   private[ll1compiletime] def accept[A,Token,Kind](k:Kind)(f: PartialFunction[Token,A])(using IdCounter): Syntax[A,Token,Kind] = elem(k).map(f)
 
   private[ll1compiletime] def epsilon[A,Token,Kind](e: A)(using IdCounter): Syntax[A,Token,Kind] = Success[A,Token,Kind](e)
+
+  private[ll1compiletime] def failure[A,Token,Kind](using IdCounter): Syntax[A,Token,Kind] = Failure()
   
   private[ll1compiletime] def elem[Token,Kind](k: Kind)(using IdCounter): Syntax[Token,Token,Kind] = Elem(k)
 
