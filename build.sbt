@@ -10,3 +10,11 @@ lazy val root = project
 
     libraryDependencies += "com.novocode" % "junit-interface" % "0.11" % "test"
   )
+
+lazy val example = Project("example", file("example"))
+  .settings(
+    name := "example",
+    scalaSource in Compile := baseDirectory.value,
+    scalaVersion := scala3Version
+  )
+  .dependsOn(root)
