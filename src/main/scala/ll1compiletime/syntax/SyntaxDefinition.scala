@@ -17,8 +17,6 @@ trait SyntaxDefinition[A,T,K] {
 
     inline def parse:ParsingTable[A,Token,Kind]
 
-    given anyToExpr : ToExpr[Any]
-
 
 
     /* 

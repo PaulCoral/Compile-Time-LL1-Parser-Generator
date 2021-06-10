@@ -6,6 +6,7 @@ import ParsingTable.ParsingTableContext
 import ParsingTable.ParsingTableInstruction
 import ParsingTable.ParsingTableContext._
 import ParsingTable.ParsingTableInstruction._
+import ParsingTable.{Nullable,Leaf,Node}
 
 import scala.quoted._
 import scala.collection.mutable.{Set,Map}
@@ -21,7 +22,7 @@ class Parsing[Kind] {
     private val conflicts: Set[LL1Conflict] = Set()
 
     private val table: Map[(Int,Kind),ParsingTableInstruction] = Map()
-    private val nullable: Map[Int,Any] = Map()
+    private val nullable: Map[Int,Nullable] = Map()
 
     def apply[A](s: Syntax[A,?,Kind]):PartialParsingTable[A,Kind] = {        
         cleaning
@@ -30,7 +31,7 @@ class Parsing[Kind] {
         if(conflicts.nonEmpty){
             throw Exception(conflicts.toString)
         }
-        PartialParsingTable[A,Kind](s.id,table.toMap,nullable.toMap)
+        PartialParsingTable[A,Kind](s.id,table.toMap, nullable.toMap)
     }
 
     private def cleaning = {
@@ -39,7 +40,6 @@ class Parsing[Kind] {
         childToParent.clear
         conflicts.clear
         table.clear
-        nullable.clear
     }
 
     private def addChildToParent(child:Int, parent: Int) = {
@@ -54,7 +54,7 @@ class Parsing[Kind] {
         idToProperties.put(s.id, prop)
         s match {
             case Success(v) => 
-                prop.nullable = Some(v)
+                prop.nullable = Some(Leaf(s.id))
                 prop.update(true)
                 ready.add(s.id)
             
@@ -72,26 +72,25 @@ class Parsing[Kind] {
             case Transform(inner,f) => 
                 addChildToParent(inner.id,s.id)
                 prop.transform = false
-                setUp(inner.asInstanceOf[Syntax[Any,?,Kind]]) // TODO tailrec
+                setUp(inner.asInstanceOf[Syntax[Any,?,Kind]]) 
 
             case Disjunction(left, right) =>
                 addChildToParent(left.id,s.id)
                 addChildToParent(right.id,s.id)
-
-                setUp(left) // TODO tailrec
-                setUp(right) // TODO tailrec
+                setUp(left) 
+                setUp(right)
 
             case Sequence(left,right) =>
                 addChildToParent(left.id,s.id)
                 addChildToParent(right.id,s.id)
-                setUp(left.asInstanceOf[Syntax[Any,?,Kind]]) // TODO tailrec
-                setUp(right.asInstanceOf[Syntax[Any,?,Kind]]) // TODO tailrec
+                setUp(left.asInstanceOf[Syntax[Any,?,Kind]]) 
+                setUp(right.asInstanceOf[Syntax[Any,?,Kind]]) 
 
             case Recursive(inner) => 
                 if(!(rec.contains(s.id))) then
                     addChildToParent(inner.id,s.id)
                     rec.add(s.id)
-                    setUp(inner) // TODO tailrec
+                    setUp(inner)
 
             case _ => throw IllegalStateException(s"Unkown Syntax $s")
 
@@ -126,9 +125,7 @@ class Parsing[Kind] {
             case None => ()
             case Some(prop@Properties(s)) =>
                 s match {
-                    case Success(v) => 
-                        // Nullable Table
-                        nullable.put(s.id,v)
+                    case Success(v) => ()
 
                     case Failure() => ()
 
@@ -156,9 +153,6 @@ class Parsing[Kind] {
                         child.first.foreach { k =>
                             table.put((s.id,k), NonTerminal(inner.id, ApplyF(s.id)))
                         }
-
-                        // Nullable Table
-                        addToNullableTable(s.id, prop.nullable)
                             
 
                     case Disjunction(left, right) =>
@@ -210,9 +204,6 @@ class Parsing[Kind] {
                             table.put((s.id,k), NonTerminal(right.id, Passed))
                         }
 
-                        // Nullable Table
-                        addToNullableTable(s.id, prop.nullable)
-
 
                     case Sequence(left,right) =>
                         val lp = idToProperties(left.id)
@@ -228,7 +219,7 @@ class Parsing[Kind] {
                         }
                         // Nullable
                         if(lp.isNullable && rp.isNullable){
-                            prop.nullable = Some((lp.nullable.get,rp.nullable.get))
+                            prop.nullable = Some(Node(lp.nullable.get,rp.nullable.get))
                         }
                         // Should-Not-Follow
                         if(rp.isNullable){
@@ -250,16 +241,11 @@ class Parsing[Kind] {
                         lp.first.foreach { k =>
                             table.put((s.id,k), NonTerminal(left.id, FollowedBy(right.id)))
                         }
-                        lp.nullable match {
-                            case None => ()
-                            case Some(v) =>
-                                rp.first.foreach { k =>
-                                    table.put((s.id,k), NonTerminal(right.id, PrependedBy(v)))
-                                }
+                        if (lp.isNullable) {
+                            rp.first.foreach { k =>
+                                table.put((s.id,k), NonTerminal(right.id, PrependedByNullable(lp.syntax.id)))
+                            }
                         }
-
-                        // Nullable Table
-                        addToNullableTable(s.id, prop.nullable)
 
                     case Recursive(inner) => 
                         val child = idToProperties(inner.id)
@@ -281,11 +267,9 @@ class Parsing[Kind] {
                             table.put((s.id,k), NonTerminal(inner.id, Passed))
                         }
 
-                        // Nullable Table
-                        addToNullableTable(s.id, prop.nullable)
-
                     case _ => throw IllegalStateException(s"Unkown Syntax $s")
                 }
+                addToNullableTable(s.id, prop.nullable)
             }
         }
 
@@ -306,12 +290,13 @@ class Parsing[Kind] {
         }
     }
 
-    private def addToNullableTable(id:Int, opt : Option[Any]) = {
+    private def addToNullableTable(id:Int, opt : Option[Nullable]) = {
         opt match {
             case None => ()
             case Some(v) => nullable.put(id, v)
         }
     }
+
 
     private def printSetContent(set: Set[?]): String = {
         if set.isEmpty then
@@ -326,7 +311,7 @@ class Parsing[Kind] {
         val first: Set[Kind] = Set()
         val snf: Set[Kind] = Set()
         var transform: Boolean = false
-        var nullable:Option[Any] = None
+        var nullable:Option[Nullable] = None
         var isProductive:Boolean = true
         var hasConflict = false
 

@@ -65,16 +65,35 @@ object Syntax {
 
   private[ll1compiletime] def recursive[A,Token,Kind](syntax: => Syntax[A,Token,Kind])(using IdCounter): Syntax[A,Token,Kind] = Recursive(syntax)
 
-  import scala.collection.mutable.Set
-  def idToFunc[Token,Kind](s: Syntax[?,Token,Kind], ids:Set[Int] = Set(),acc: Map[Int,(Any => Any)] = Map()):Map[Int, (Any => Any)] = 
-    s match {
-      case x if ids.contains(x.id) => acc
-      case Transform(i,f) => idToFunc(i, ids += s.id,acc + (s.id -> f.asInstanceOf[Any => Any]))
-      case Sequence(l,r) =>  idToFunc(r,ids += s.id,idToFunc(l,ids += s.id,acc))
-      case Disjunction(l,r) => idToFunc(r,ids += s.id,idToFunc(l,ids += s.id,acc))
-      case Recursive(i) => idToFunc(i,ids += s.id,acc)
-      case _ => acc
+  def runtimeSyntaxData[Token,Kind](
+    syntax: Syntax[?,Token,Kind]
+  ):(Map[Int, (Any => Any)],Map[Int, Any]) = {
+    import scala.collection.mutable.{Set,Map,Queue}
+
+    val ft = Map[Int, (Any => Any)]()
+    val nt = Map[Int, Any]()
+    val ids = Set[Int]()
+    val queue = Queue(syntax)
+
+    while(!(queue.isEmpty)) {
+      val s = queue.dequeue
+      if(!(ids.contains(s.id))) {
+        ids += s.id
+        s match {
+          case Transform(i,f) => {
+            ft += (s.id -> f.asInstanceOf[Any => Any])
+            queue.enqueue(i)
+          }
+          case Sequence(l,r) => queue.enqueue(l,r)
+          case Disjunction(l,r) => queue.enqueue(l,r)
+          case Recursive(i) => queue.enqueue(i)
+          case Success(v) => nt += (s.id -> v.asInstanceOf[Any])
+          case _ => ()
+        }
+      }
     }
+    (ft.toMap,nt.toMap) // as immutable Map
+  }
 }
 
 

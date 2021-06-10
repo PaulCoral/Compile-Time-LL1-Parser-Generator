@@ -8,7 +8,14 @@ import ParsingTable.ParsingTableContext._
 import ParsingTable.ParsingTableInstruction._
 import ParsingTable._
 
-case class ParsingTable[A,Token,Kind](entry: Int, table: Map[(Int,Kind), ParsingTableInstruction], nullable:Map[Int,Any], ft:Map[Int,(Any => Any)],getKind: Token => Kind){
+case class ParsingTable[A,Token,Kind](
+    entry: Int, 
+    table: Map[(Int,Kind), ParsingTableInstruction], 
+    nt:Map[Int,Any],
+    nullable: Map[Int,Nullable],
+    ft:Map[Int,(Any => Any)],
+    getKind: Token => Kind
+){
 
     private type Context = List[ParsingTableContext]
     private type Instruction = ParsingTableInstruction
@@ -23,7 +30,7 @@ case class ParsingTable[A,Token,Kind](entry: Int, table: Map[(Int,Kind), Parsing
             case Nil => 
                 nullable.get(s) match {
                     case None => UnexpectedEnd(getFirstSetOfSyntax(s))
-                    case Some(v) => plugValue(v,c) match {
+                    case Some(v) => plugValue(v.get(using nt),c) match {
                         case Left(v) => result(v,Nil)
                         case Right((s2,c2)) => parse(s,c,Nil)
                     }
@@ -72,7 +79,7 @@ case class ParsingTable[A,Token,Kind](entry: Int, table: Map[(Int,Kind), Parsing
             case None => 
                 nullable.get(s) match {
                     case None => None
-                    case Some(value) => Some(Left(value))
+                    case Some(value) => Some(Left(value.get(using nt)))
                 }
             case Some(instr) => Some(Right(instr))
         }
@@ -88,6 +95,7 @@ case class ParsingTable[A,Token,Kind](entry: Int, table: Map[(Int,Kind), Parsing
             case Nil => Left(v)
             case ApplyF(fId)::cs => plugValue(ft(fId)(v),cs)
             case PrependedBy(vp)::cs => plugValue((vp,v),cs)
+            case PrependedByNullable(s)::cs => plugValue((nullable(s).get(using nt),v),cs)
             case FollowedBy(s)::cs => Right((s,PrependedBy(v)::cs))
             case Passed::cs => plugValue(v,cs)
         }
@@ -101,7 +109,7 @@ object ParsingTable{
     }
 
     object ParsingTableInstruction {
-        given ParsingTableInstructionToExpr(using ToExpr[Any]): ToExpr[ParsingTableInstruction] with {
+        given ParsingTableInstructionToExpr: ToExpr[ParsingTableInstruction] with {
             def apply(pti : ParsingTableInstruction)(using Quotes):Expr[ParsingTableInstruction] = 
                 pti match {
                     case Terminal => '{Terminal}
@@ -113,6 +121,7 @@ object ParsingTable{
     enum ParsingTableContext {
         case ApplyF(id: Int) extends ParsingTableContext
         case PrependedBy(v: Any) extends ParsingTableContext
+        case PrependedByNullable(s: Int) extends ParsingTableContext
         case FollowedBy(s: Int) extends ParsingTableContext
         case Passed extends ParsingTableContext
     }
@@ -126,14 +135,33 @@ object ParsingTable{
                 }
         }
 
-        given ParsingTableContextToExpr(using ToExpr[Any]) : ToExpr[ParsingTableContext] with {
+        given ParsingTableContextToExpr : ToExpr[ParsingTableContext] with {
             def apply(ptc:ParsingTableContext)(using Quotes) = ptc match{
                 case ApplyF(f) => '{ApplyF(${Expr(f)})}
-                case PrependedBy(v) => '{PrependedBy(${Expr(v)})}
+                case PrependedBy(_) => throw UnsupportedOperationException(s"This < ${ptc} > should not be used at compile time")
+                case PrependedByNullable(s) => '{PrependedByNullable(${Expr(s)})}
                 case FollowedBy(s) => '{FollowedBy(${Expr(s)})}
                 case Passed => '{Passed}
             }
         }
+    }
+
+    sealed trait Nullable {
+        def get(using table: Map[Int,Any]):Any
+    }
+    object Nullable {
+        given ToExpr[Nullable] with {
+            def apply(n: Nullable)(using Quotes): Expr[Nullable] = n match {
+                case Leaf(i) => '{Leaf(${Expr(i)})}
+                case Node(l,r) => '{Node(${Expr(l)},${Expr(r)})}
+            }
+        }
+    }
+    case class Leaf(i:Int) extends Nullable{
+        def get(using table: Map[Int,Any]):Any = i.asInstanceOf[Any]
+    }
+    case class Node(left: Nullable, right: Nullable) extends Nullable {
+        def get(using table: Map[Int,Any]):Any = ((left.get, right.get)).asInstanceOf[Any]
     }
 
     sealed trait ParsingResult[A] {

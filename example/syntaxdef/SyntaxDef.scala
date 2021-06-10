@@ -24,17 +24,9 @@ object SyntaxDef extends SyntaxDefinition[Int,MyToken,MyKind] {
 
     lazy val sum: CSyntax[Int] = (elemInt ~ rec_sum).map{ case (a,b) => a + b }
 
-
     lazy val entryPoint = sum
 
     inline def parse = getPartialParsingTable.withFunctionTable(this)
-
-    given anyToExpr:ToExpr[Any] with {
-        def apply(a: Any)(using Quotes) = a match {
-            case x:Int => Expr(x)
-            case x:String => Expr(x)
-        }
-    }
 }
 
 
