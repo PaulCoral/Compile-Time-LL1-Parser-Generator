@@ -26,7 +26,7 @@ object SyntaxDef extends SyntaxDefinition[Int,MyToken,MyKind] {
 
     lazy val entryPoint = sum
 
-    inline def parse = getPartialParsingTable.withFunctionTable(this)
+    inline def compileTimeParsingTable = getPartialParsingTable
 }
 
 
