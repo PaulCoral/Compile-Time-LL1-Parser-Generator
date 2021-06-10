@@ -1,14 +1,19 @@
-# Bachelor Project LARA Personal Information
+# Bachelor Project LARA
 
-Title : `Advancing Combinator Parsing in Scala`
-===============================================
+## Title : _Advancing Combinator Parsing in Scala_
 
-### Some Tests
+### Description
+A LL1 (mostly) compile time parser based on [Scall1on](https://github.com/epfl-lara/scallion). This parser allow the user to construct a syntax based on combinators, and construct a parsing table mostly at compile time. Some work is still done at runtime as some datatype are not well supported by macro, either the user as to handle them each new type, either it is not possible get them out of the macro context.
+
+### Usage
+
+An example is provided [here](https://github.com/PaulCoral/Compile-Time-LL1-Parser/example).
+
+### Some Other work
 - [Tests : Compile-time reduction of ASTs using Metaprogramming](https://gitlab.epfl.ch/pcoral/bachelor-project-lara-personal-information/-/tree/AST_macro_tests)
 
 ### Some Readings
 - [Scall1on](https://github.com/epfl-lara/scallion)
-- [EverParse](https://project-everest.github.io/assets/everparse.pdf)
 - [Scala3 Metaprogramming](https://dotty.epfl.ch/docs/Metaprogramming/index.html)
-- [Isomorphism/Reverse parsing+pretty-printing](https://www.informatik.uni-marburg.de/~rendel/unparse/rendel10invertible.pdf)
-- [Other LARA student projects](https://gitlab.epfl.ch/kuncak/student-projects)
+
+
