@@ -20,9 +20,15 @@ object SyntaxDef extends SyntaxDefinition[Int,MyToken,MyKind] {
 
     lazy val elemInt: CSyntax[Int] = accept(IntKind){ case IntLitToken(v) => v }
 
-    lazy val rec_sum: CSyntax[Int] = recursive{ sum | epsilon(0) }
+    lazy val eof: CSyntax[Int] = accept(EOFKind){ case EOFToken => 0 }
 
-    lazy val sum: CSyntax[Int] = (elemInt ~ rec_sum).map{ case (a,b) => a + b }
+    //lazy val rec_sum: CSyntax[Int] = recursive{ sum | epsilon(0) }
+
+    lazy val rec_sum: CSyntax[Int] = recursive{ sum }
+
+    lazy val sum: CSyntax[Int] = recursive { 
+        (elemInt ~ sum).map{ case (a,b) => a + b } | eof
+    }
 
     lazy val entryPoint = sum
 
