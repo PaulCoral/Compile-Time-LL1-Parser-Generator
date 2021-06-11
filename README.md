@@ -7,7 +7,7 @@ A LL1 (mostly) compile time parser based on [Scall1on](https://github.com/epfl-l
 
 ### Usage
 
-An example is provided [here](https://github.com/PaulCoral/Compile-Time-LL1-Parser/example).
+An example is provided in [example/syntaxdef](https://github.com/PaulCoral/Compile-Time-LL1-Parser/tree/master/example/syntaxdef).
 
 ### Some Other work
 - [Tests : Compile-time reduction of ASTs using Metaprogramming](https://gitlab.epfl.ch/pcoral/bachelor-project-lara-personal-information/-/tree/AST_macro_tests)
