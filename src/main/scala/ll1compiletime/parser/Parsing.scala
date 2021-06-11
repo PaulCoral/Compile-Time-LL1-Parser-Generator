@@ -24,14 +24,14 @@ class Parsing[Kind] {
     private val table: Map[(Int,Kind),ParsingTableInstruction] = Map()
     private val nullable: Map[Int,Nullable] = Map()
 
-    def apply[A](s: Syntax[A,?,Kind]):PartialParsingTable[A,Kind] = {        
+    def apply(s: Syntax[?,?,Kind]):PartialParsingTable[Kind] = {        
         cleaning
         setUp(s.asInstanceOf[Syntax[Any,?,Kind]])
         propagate
         if(conflicts.nonEmpty){
             throw Exception(conflicts.toString)
         }
-        PartialParsingTable[A,Kind](s.id,table.toMap, nullable.toMap)
+        PartialParsingTable[Kind](s.id,table.toMap, nullable.toMap)
     }
 
     private def cleaning = {
