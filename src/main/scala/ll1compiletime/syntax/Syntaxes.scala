@@ -19,10 +19,11 @@ sealed trait Syntax[A,Token,Kind](using idc:IdCounter){
   /**
    * Sequence operator
    */
-  private[ll1compiletime] infix def ~[B](that: Syntax[B,Token,Kind]):Syntax[(A,B),Token,Kind] = 
+  private[ll1compiletime] infix def ~[B](that: Syntax[B,Token,Kind]):Syntax[A ~ B,Token,Kind] = 
     (this, that) match
       case (Failure(),_) => Failure()
       case (_, Failure()) => Failure()
+      case (Success(a),Success(b)) => Success(new ~(a,b))
       case _ => Sequence(this, that)
 
   /**
@@ -96,6 +97,11 @@ object Syntax {
   }
 }
 
+case class ~[+A, +B](_1: A, _2: B) {
+    /* Builds a pair. */
+    def ~[C](next: C): (A ~ B) ~ C = new ~(this, next)
+}
+
 
 /**
  * Successful parsing
@@ -124,7 +130,7 @@ case class Transform[A,B,Token,Kind](inner: Syntax[A,Token,Kind],f : A => B)(usi
 /**
  * The parsing of a sequence of Token
  */
-case class Sequence[A, B,Token,Kind](left: Syntax[A,Token,Kind], right: Syntax[B,Token,Kind])(using IdCounter) extends Syntax[(A, B),Token,Kind]
+case class Sequence[A, B,Token,Kind](left: Syntax[A,Token,Kind], right: Syntax[B,Token,Kind])(using IdCounter) extends Syntax[A ~ B,Token,Kind]
 
 
 /**

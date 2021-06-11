@@ -4,9 +4,12 @@ package ll1compiletime.parser
 import scala.quoted._
 import scala.quoted.ToExpr._
 
+import ll1compiletime.syntax.~
+
 import ParsingTable.ParsingTableContext._
 import ParsingTable.ParsingTableInstruction._
 import ParsingTable._
+
 
 case class ParsingTable[A,Token,Kind](
     entry: Int, 
@@ -94,8 +97,8 @@ case class ParsingTable[A,Token,Kind](
         c match {
             case Nil => Left(v)
             case ApplyF(fId)::cs => plugValue(ft(fId)(v),cs)
-            case PrependedBy(vp)::cs => plugValue((vp,v),cs)
-            case PrependedByNullable(s)::cs => plugValue((nullable(s).get(using nt),v),cs)
+            case PrependedBy(vp)::cs => plugValue(new ~(vp,v),cs)
+            case PrependedByNullable(s)::cs => plugValue(new ~(nullable(s).get(using nt),v),cs)
             case FollowedBy(s)::cs => Right((s,PrependedBy(v)::cs))
             case Passed::cs => plugValue(v,cs)
         }
@@ -161,7 +164,7 @@ object ParsingTable{
         def get(using table: Map[Int,Any]):Any = i.asInstanceOf[Any]
     }
     case class Node(left: Nullable, right: Nullable) extends Nullable {
-        def get(using table: Map[Int,Any]):Any = ((left.get, right.get)).asInstanceOf[Any]
+        def get(using table: Map[Int,Any]):Any = (new ~(left.get, right.get)).asInstanceOf[Any]
     }
 
     sealed trait ParsingResult[A] {

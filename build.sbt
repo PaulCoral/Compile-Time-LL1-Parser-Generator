@@ -27,3 +27,19 @@ lazy val example = Project("example", file("example"))
     scalaSource in Compile := baseDirectory.value,
   )
   .dependsOn(root)
+
+
+  lazy val benchmark = Project("benchmark", file("benchmark"))
+  .settings(
+    commonSettings,
+    name := "benchmark",
+    scalaSource in Compile := baseDirectory.value,
+    resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/releases",
+    libraryDependencies += ("com.storm-enroute" %% "scalameter" % "0.21").cross(CrossVersion.for3Use2_13),
+    testFrameworks += new TestFramework("org.scalameter.ScalaMeterFramework"),
+    parallelExecution in Test := false,
+    fork := true,
+    outputStrategy := Some(StdoutOutput),
+    connectInput := true
+  )
+  .dependsOn(root)

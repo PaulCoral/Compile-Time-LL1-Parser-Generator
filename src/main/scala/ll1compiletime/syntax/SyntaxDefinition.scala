@@ -23,6 +23,11 @@ trait SyntaxDefinition[A,T,K] {
      * Syntax Context : we restrain the context of the syntax for tokens and kinds   
      */
 
+    
+    extension [A](thiz:A) {
+        infix def ~[B](that:B):A ~ B = new ~(thiz,that)
+    }
+
 
     extension [X](thiz: CSyntax[X]) {
         infix def |(that: CSyntax[X])(using IdCounter):CSyntax[X] = 
@@ -31,7 +36,7 @@ trait SyntaxDefinition[A,T,K] {
         /**
          * Sequence operator
          */
-        infix def ~[B](that: CSyntax[B]):CSyntax[(X,B)] = 
+        infix def ~[B](that: CSyntax[B]):CSyntax[X ~ B] = 
             thiz.~(that)
 
         /**
@@ -56,12 +61,12 @@ trait SyntaxDefinition[A,T,K] {
     extension [X](thiz: CSyntax[Seq[X]]) {
         def :+(that: CSyntax[X]):CSyntax[Seq[X]] = 
             thiz.~(that).map{
-                case (a,b) => a :+ b
+                case a ~ b => a :+ b
             }
 
         def +:(that: CSyntax[X]):CSyntax[Seq[X]] = 
             that.~(thiz).map{
-                case (b,a) => b +: a
+                case b ~ a => b +: a
             }
     }
     
