@@ -24,7 +24,8 @@ class Parsing[Kind] {
     private val table: Map[(Int,Kind),ParsingTableInstruction] = Map()
     private val nullable: Map[Int,Nullable] = Map()
 
-    def apply(s: Syntax[?,?,Kind]):PartialParsingTable[Kind] = {        
+    def apply(sd: SyntaxDefinition[?,?,Kind]):PartialParsingTable[Kind] = {        
+        val s = sd.entryPoint
         cleaning
         setUp(s.asInstanceOf[Syntax[Any,?,Kind]])
         propagate
@@ -328,6 +329,13 @@ class Parsing[Kind] {
         case SNFFirst(kind: Set[Kind]) extends LL1Conflict(s"First-Follow Conflict : The should-not-follow set of the left-hand side of a sequence and the first set of the right-hand side of that sequence are not disjoint: ${printSetContent(kind)}")
 
         override def toString = s"\n⚠️ $msg ⚠️\n"
+    }
+}
+
+object Parsing {
+    def apply[K](sd: SyntaxDefinition[?,?,K]):PartialParsingTable[K] = {
+        val parsing = new Parsing[K]
+        parsing(sd)
     }
 }
 

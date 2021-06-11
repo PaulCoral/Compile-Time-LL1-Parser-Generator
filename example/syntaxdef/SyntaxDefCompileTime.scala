@@ -11,6 +11,5 @@ import SyntaxDef.given
 inline def getPartialParsingTable = ${init}
 
 def init(using Quotes) = {
-    val parsing = new Parsing[SyntaxDef.Kind]
-    Expr(parsing(SyntaxDef.entryPoint))
+    Expr(Parsing(SyntaxDef))
 }

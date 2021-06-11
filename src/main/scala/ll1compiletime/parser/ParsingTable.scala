@@ -169,28 +169,25 @@ object ParsingTable{
 
     sealed trait ParsingResult[A] {
         def toType[B]:ParsingResult[B]
-
-        override def toString = this match {
-            case ParsedSuccessfully(v) =>
-                s"Successful parsing: $v"
-            case ParsedSuccessfullyWithRest(v,r) =>
-                s"Successful parsing with rest. Value : $v\nRest: $r"
-            case UnexpectedEnd(e) => 
-                s"Unexpected End, expected kind : $e"
-            case UnexpectedToken(k,e) => 
-                s"Unexpected Token of Kind $k, expected kind : $e"
-        }
     }
     case class ParsedSuccessfully[A](v: A) extends ParsingResult[A] {
         def toType[B]:ParsingResult[B] = ParsedSuccessfully(v.asInstanceOf[B])
+
+        override def toString = s"Successful parsing: $v"
     }
     case class ParsedSuccessfullyWithRest[A,Token](v: A, tokens:List[Token]) extends ParsingResult[A]{
         def toType[B]:ParsingResult[B] = ParsedSuccessfullyWithRest(v.asInstanceOf[B],tokens)
+
+        override def toString = s"Successful parsing with rest. Value : $v\nRest: $tokens"
     }
     case class UnexpectedEnd[A,Kind](expected: Set[Kind]) extends ParsingResult[A]{
         def toType[B]:ParsingResult[B] = UnexpectedEnd[B,Kind](expected)
+
+        override def toString = s"Unexpected End, expected kind : $expected"
     }
     case class UnexpectedToken[A,Kind](k: Kind, expected: Set[Kind]) extends ParsingResult[A]{
         def toType[B]:ParsingResult[B] = UnexpectedToken[B,Kind](k,expected)
+
+        override def toString = s"Unexpected Token of Kind $k, expected kind : $expected"
     }
 }
