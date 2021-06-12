@@ -13,14 +13,11 @@ import scala.collection.mutable.{Set,Map}
 import scala.annotation.tailrec
 
 class Parsing[Kind] {
-
     private val ready: Set[Int] = Set()
     private val rec: Set[Int] = Set()
     private val idToProperties: Map[Int, Properties] = Map()
     private val childToParent: Map[Int, Set[Int]] = Map()
-
     private val conflicts: Set[LL1Conflict] = Set()
-
     private val table: Map[(Int,Kind),ParsingTableInstruction] = Map()
     private val nullable: Map[Int,Nullable] = Map()
 
@@ -35,6 +32,9 @@ class Parsing[Kind] {
         PartialParsingTable[Kind](s.id,table.toMap, nullable.toMap)
     }
 
+    /**
+     * 
+     */
     private def cleaning = {
         ready.clear
         idToProperties.clear
