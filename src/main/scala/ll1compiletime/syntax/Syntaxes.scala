@@ -50,7 +50,9 @@ sealed trait Syntax[A,Token,Kind](using idc:IdCounter){
   private[ll1compiletime] def map[B](f: A => B): Syntax[B,Token,Kind] =
     Transform(this, f)
 
-
+  /**
+   * define an optional syntax
+   */
   private[ll1compiletime] def opt: Syntax[Option[A],Token,Kind] =
     this.map(Some(_)) | (Syntax.epsilon(None))
 }
@@ -66,20 +68,28 @@ object Syntax {
 
   private[ll1compiletime] def recursive[A,Token,Kind](syntax: => Syntax[A,Token,Kind])(using IdCounter): Syntax[A,Token,Kind] = Recursive(syntax)
 
-  def runtimeSyntaxData[Token,Kind](
+  /**
+   * Collect the inner data of syntax which can't be used
+   * at compile time
+   */
+  private[ll1compiletime] def runtimeSyntaxData[Token,Kind](
     syntax: Syntax[?,Token,Kind]
   ):(Map[Int, (Any => Any)],Map[Int, Any]) = {
     import scala.collection.mutable.{Set,Map,Queue}
 
+    // id -> transform func
     val ft = Map[Int, (Any => Any)]()
+    // id -> base value
     val nt = Map[Int, Any]()
-    val ids = Set[Int]()
+    // visited ids
+    val visited = Set[Int]()
+    // the queue of syntax to be processed
     val queue = Queue(syntax)
 
     while(!(queue.isEmpty)) {
       val s = queue.dequeue
-      if(!(ids.contains(s.id))) {
-        ids += s.id
+      if(!(visited.contains(s.id))) {
+        visited += s.id
         s match {
           case Transform(i,f) => {
             ft += (s.id -> f.asInstanceOf[Any => Any])
@@ -93,54 +103,96 @@ object Syntax {
         }
       }
     }
-    (ft.toMap,nt.toMap) // as immutable Map
+    (ft.toMap,nt.toMap) // as immutable Maps
   }
 }
 
+/**
+ * A pair of value
+ * 
+ * Used as infix type
+ * 
+ * @example case a ~ b ~ c => ???
+ * 
+ * @param _1 first value
+ * @param _2 second value
+ */
 case class ~[+A, +B](_1: A, _2: B) {
-    /* Builds a pair. */
+    /**
+     * Build a pair from this pair and a new value
+     * 
+     * @param next the value to append to this pair
+     */
     def ~[C](next: C): (A ~ B) ~ C = new ~(this, next)
 }
 
 
 /**
- * Successful parsing
+ * Syntax for an empty sequence of token
+ * 
+ * @tparam A the type of the resulting parsing value
+ * @tparam Token the Token type used in parsing
+ * @tparam Kind the Kind of the Tokens used in parsing
+ * @param value the value produced on an empty sequence of token
  */
 case class Success[A,Token,Kind](value: A)(using IdCounter) extends Syntax[A,Token,Kind]
   
 
 /**
- * Failed parsing
+ * Empty Syntax, result in parsing failure
+ * 
+ * @tparam A the type of the resulting parsing value
+ * @tparam Token the Token type used in parsing
+ * @tparam Kind the Kind of the Tokens used in parsing
  */
 case class Failure[A,Token,Kind]()(using IdCounter) extends Syntax[A,Token,Kind]
   
 
 /**
- * The parsing of a single Token
+ * Syntax for parsing a single Token of the given Kind.
+ * Produce the Token as parsing value
+ * 
+ * @tparam Token the Token type used in parsing
+ * @tparam Kind the Kind of the Tokens used in parsing
+ * @param e the Kind of the Token to parse
  */
 case class Elem[Token,Kind](e: Kind)(using IdCounter) extends Syntax[Token,Token,Kind]
   
 
 /**
- * Transformation by applying a function on the result of a successful parsing
+ * Transformation of a Syntax by applying a function on the result of a successful parsing
+ * of the inner syntax
+ * 
+ * @tparam A type of the the parsed value before the tranformation
+ * @tparam B type of the the parsed value after the tranformation
+ * @param inner the inner syntax
+ * @param f the function to apply to the parsed value
  */
 case class Transform[A,B,Token,Kind](inner: Syntax[A,Token,Kind],f : A => B)(using IdCounter) extends Syntax[B,Token,Kind]
   
 
 /**
- * The parsing of a sequence of Token
+ * Syntax of a sequence
+ * 
+ * @param left the first syntax in the sequence
+ * @param right the second syntax in the sequence
  */
 case class Sequence[A, B,Token,Kind](left: Syntax[A,Token,Kind], right: Syntax[B,Token,Kind])(using IdCounter) extends Syntax[A ~ B,Token,Kind]
 
 
 /**
- * The parsing of a disjunction of Token
+ * Syntax of a disjunction
+ * 
+ * @param left one of the syntax
+ * @param left the other syntax
  */
 case class Disjunction[A,Token,Kind](left: Syntax[A,Token,Kind], right: Syntax[A,Token,Kind])(using IdCounter) extends Syntax[A,Token,Kind]
   
 
 /**
- * Recursive construction of a syntaxs
+ * Recursive construction of a syntax
+ * 
+ * @param syntax the inner syntax to define as recursive
  */
 class Recursive[A,Token,Kind](syntax: => Syntax[A,Token,Kind])(using IdCounter) extends Syntax[A,Token,Kind]{
   lazy val inner = syntax
@@ -148,8 +200,16 @@ class Recursive[A,Token,Kind](syntax: => Syntax[A,Token,Kind])(using IdCounter) 
 }
 
 object Recursive {
+
+  /**
+   * Construct a recursive syntax form the inner syntax
+   * 
+   * @param syntax the inner syntax
+   * @return a recursive inner syntax
+   */
   def apply[A,Token,Kind](syntax: => Syntax[A,Token,Kind])(using IdCounter): Recursive[A,Token,Kind] = new Recursive(syntax)
 
+  /** Extract the inner syntax */
   def unapply[A,Token,Kind](that: Syntax[A,Token,Kind]): Option[Syntax[A,Token,Kind]] = {
     if (that.isInstanceOf[Recursive[?,Token,Kind]]) {
       val other = that.asInstanceOf[Recursive[A,Token,Kind]]
