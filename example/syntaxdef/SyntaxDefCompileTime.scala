@@ -26,7 +26,7 @@ object SyntaxDef extends SyntaxDefinition[Int,MyToken,MyKind] {
 
     def getKind(t:MyToken):MyKind = MyKind.getKind(t)
 
-    given id:IdCounter = new IdCounter()
+    given idc:IdCounter = new IdCounter()
 
     lazy val elemInt: CSyntax[Int] = accept(IntKind){ case IntLitToken(v) => v }
 
