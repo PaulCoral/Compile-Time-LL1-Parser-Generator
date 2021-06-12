@@ -12,7 +12,7 @@ An example is provided in [example/syntaxdef](https://github.com/PaulCoral/Compi
 
 ### Extras
 
-- I used the [Silex](https://github.com/epfl-lara/silex) lexing library, which I had to upgrade to Scala 3 ([here](https://github.com/PaulCoral/silex/tree/scala3))
+- I used the [Silex](https://github.com/epfl-lara/silex) lexing library, which I had to upgrade to Scala 3 ([here](https://github.com/PaulCoral/silex/))
 
 ### Some Other work
 - [Tests : Compile-time reduction of ASTs using Metaprogramming](https://github.com/PaulCoral/Compile-Time-LL1-Parser/tree/AST_macro_tests)
