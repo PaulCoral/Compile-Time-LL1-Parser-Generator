@@ -2,7 +2,7 @@ import example.syntaxdef._
 import MyToken._
 
 @main def hello: Unit =
-    val parsingTable = SyntaxDef.parse
+    val parsingTable = getPartialParsingTable.withFunctionTable(SyntaxDef)
 
     val range = 1 to 10
     val head = range.head

@@ -15,9 +15,7 @@ trait SyntaxDefinition[A,T,K] {
 
     lazy val entryPoint: CSyntax[A]
 
-    inline def compileTimeParsingTable: PartialParsingTable[Kind]
-
-    final inline def parse:ParsingTable[A,Token,Kind] = compileTimeParsingTable.withFunctionTable(this)
+    //final inline def parse:ParsingTable[A,Token,Kind] = compileTimeParsingTable.withFunctionTable(this)
 
     /* 
      * Syntax Context : we restrain the context of the syntax for tokens and kinds   
