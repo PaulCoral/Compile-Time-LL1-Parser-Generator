@@ -99,6 +99,7 @@ trait SyntaxDefinition[A,T,K] {
          * Map this syntax of `X` to a syntax of `B`
          * by applying the function `f` on resulting the value
          * 
+         * @param B the type of the resulting syntax
          * @param f the function applied on the parsed value
          */
         def map[B](f: X => B): CSyntax[B] =
