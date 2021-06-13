@@ -13,7 +13,7 @@ import scala.quoted.ToExpr
  * @tparam T the Token type
  * @tparam K the Kind type
  */
-private[ll1compiletime] trait SyntaxDefinition[A,T,K] {
+trait SyntaxDefinition[A,T,K] {
     /** the type of parsing Tokens */
     type Token = T
     /** the type of Kind of the parsing Tokens */
