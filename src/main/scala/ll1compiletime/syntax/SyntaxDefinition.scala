@@ -38,6 +38,9 @@ trait SyntaxDefinition[A,T,K] {
      */
     def getKind(t: Token):Kind
 
+    /**
+     * The top level syntax, where the parsing begin.
+     */
     lazy val entryPoint: CSyntax[A]
 
     /* --- Syntax Context : we restrain the context of the syntax for these Token `T` and kind `K` --- */
