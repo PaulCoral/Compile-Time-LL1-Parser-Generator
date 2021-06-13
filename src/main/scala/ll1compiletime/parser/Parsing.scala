@@ -7,20 +7,22 @@ import ParsingTable.ParsingTableInstruction
 import ParsingTable.ParsingTableContext._
 import ParsingTable.ParsingTableInstruction._
 import ParsingTable.{Nullable,Leaf,Node}
+import Parsing._
 
 import scala.quoted._
-import scala.collection.mutable.{Set,Map}
-import scala.annotation.tailrec
+import scala.collection.mutable.{Set,Map,Queue}
 
 class Parsing[Kind] {
-    private val ready: Set[Int] = Set()
-    private val rec: Set[Int] = Set()
-    private val idToProperties: Map[Int, Properties] = Map()
+    private val ready = Queue[Int]()
+    private val idToProperties: Map[Int, Properties[Kind]] = Map()
     private val childToParent: Map[Int, Set[Int]] = Map()
     private val conflicts: Set[LL1Conflict] = Set()
     private val table: Map[(Int,Kind),ParsingTableInstruction] = Map()
     private val nullable: Map[Int,Nullable] = Map()
 
+    /**
+     * Returns a PartialParsingTable from a SyntaxDefinition
+     */
     def apply(sd: SyntaxDefinition[?,?,Kind]):PartialParsingTable[Kind] = {        
         val s = sd.entryPoint
         cleaning
@@ -29,11 +31,11 @@ class Parsing[Kind] {
         if(conflicts.nonEmpty){
             throw Exception(conflicts.toString)
         }
-        PartialParsingTable[Kind](s.id,table.toMap, nullable.toMap)
+        PartialParsingTable[Kind](s.id, table.toMap, nullable.toMap)
     }
 
     /**
-     * 
+     * Clear all table used
      */
     private def cleaning = {
         ready.clear
@@ -41,8 +43,12 @@ class Parsing[Kind] {
         childToParent.clear
         conflicts.clear
         table.clear
+        nullable.clear
     }
 
+    /**
+     * Add a parent to the parent set corresponding to the given child
+     */
     private def addChildToParent(child:Int, parent: Int) = {
         childToParent.get(child) match {
             case None => childToParent.put(child, Set(parent))
@@ -50,77 +56,98 @@ class Parsing[Kind] {
         }
     }
 
-    private def setUp(s: Syntax[Any,?,Kind]):Unit = 
-        val prop = Properties(s)
-        idToProperties.put(s.id, prop)
-        s match {
-            case Success(v) => 
-                prop.nullable = Some(Leaf(s.id))
-                prop.update(true)
-                ready.add(s.id)
+    /**
+     * Set up the tables from the entry syntax
+     */
+    private def setUp(entry: Syntax[Any,?,Kind]):Unit = {
+        val visited = Set[Int]()
+        val queue = Queue[Syntax[Any,?,Kind]](entry)
+
+        while(queue.nonEmpty){
+            val s = queue.dequeue
             
-            case Failure() =>
-                prop.isProductive = false
-                prop.hasConflict = true
-                ready.add(s.id)
-                prop.update(true)
+            if(!(visited contains s.id)){
+                visited += s.id
+                val prop = Properties(s)
+                idToProperties.put(s.id, prop)
+                s match {
+                    case Success(v) => 
+                        prop.nullable = Some(Leaf(s.id))
+                        prop.update(true)
+                        ready.enqueue(s.id)
+                    
+                    case Failure() =>
+                        prop.isProductive = false
+                        prop.hasConflict = true
+                        ready.enqueue(s.id)
+                        prop.update(true)
 
-            case Elem(k:Kind) => 
-                prop.first.add(k)
-                ready.add(s.id)
-                prop.update(true)
+                    case Elem(k:Kind) => 
+                        prop.first.add(k)
+                        ready.enqueue(s.id)
+                        prop.update(true)
 
-            case Transform(inner,f) => 
-                addChildToParent(inner.id,s.id)
-                prop.transform = false
-                setUp(inner.asInstanceOf[Syntax[Any,?,Kind]]) 
+                    case Transform(inner,f) => 
+                        addChildToParent(inner.id,s.id)
+                        prop.transform = false
+                        queue.enqueue(inner.asInstanceOf[Syntax[Any,?,Kind]]) 
 
-            case Disjunction(left, right) =>
-                addChildToParent(left.id,s.id)
-                addChildToParent(right.id,s.id)
-                setUp(left) 
-                setUp(right)
+                    case Disjunction(left, right) =>
+                        addChildToParent(left.id,s.id)
+                        addChildToParent(right.id,s.id)
+                        queue.enqueue(left) 
+                        queue.enqueue(right)
 
-            case Sequence(left,right) =>
-                addChildToParent(left.id,s.id)
-                addChildToParent(right.id,s.id)
-                setUp(left.asInstanceOf[Syntax[Any,?,Kind]]) 
-                setUp(right.asInstanceOf[Syntax[Any,?,Kind]]) 
+                    case Sequence(left,right) =>
+                        addChildToParent(left.id,s.id)
+                        addChildToParent(right.id,s.id)
+                        queue.enqueue(left.asInstanceOf[Syntax[Any,?,Kind]]) 
+                        queue.enqueue(right.asInstanceOf[Syntax[Any,?,Kind]]) 
 
-            case Recursive(inner) => 
-                if(!(rec.contains(s.id))) then
-                    addChildToParent(inner.id,s.id)
-                    rec.add(s.id)
-                    setUp(inner)
+                    case Recursive(inner) => 
+                        addChildToParent(inner.id,s.id)
+                        queue.enqueue(inner)
 
-            case _ => throw IllegalStateException(s"Unkown Syntax $s")
-
-        }
-
-    def propagate = {
-        while(ready.nonEmpty){
-            ready.foreach{ (id) => 
-                ready.remove(id)
-                updateProperties(id)
-                idToProperties.get(id) match {
-                    case None => ()
-                    case Some(prop) =>
-                        if (prop.updated){
-                            prop.updated = false
-                            childToParent.get(id) match {
-                                case Some(parentSet) => 
-                                    parentSet.foreach{ parentId => 
-                                        ready.add(parentId)
-                                    }
-                                
-                                case None => ()
-                            }
-                        }
+                    case _ => throw IllegalArgumentException(s"Unkown Syntax $s")
                 }
             }
         }
     }
 
+
+    /**
+     * Propagate the changes after the SetUp, until there's
+     * nothing more to update
+     */
+    private def propagate = {
+        while(ready.nonEmpty){
+            val id = ready.dequeue
+            updateProperties(id)
+            idToProperties.get(id) match {
+                case None => ()
+                case Some(prop) =>
+                    if (prop.updated){
+                        prop.updated = false
+                        childToParent.get(id) match {
+                            case Some(parentSet) => 
+                                parentSet.foreach{ parentId => 
+                                    ready.enqueue(parentId)
+                                }
+                            
+                            case None => ()
+                        }
+                    }
+            }
+            
+        }
+    }
+
+    /**
+     * Update the property corresponding to the given
+     * Syntax id
+     * 
+     * @param id the syntax id
+     */
     def updateProperties(id: Int):Unit = {
         idToProperties.get(id) match {
             case None => ()
@@ -164,8 +191,8 @@ class Parsing[Kind] {
                         prop.isProductive = lp.isProductive || rp.isProductive
 
                         // First
-                        prop.update(addAllAndNotify(prop.first,lp.first))
-                        prop.update(addAllAndNotify(prop.first,rp.first))
+                        prop.update(prop.first.addAllAndNotify(lp.first))
+                        prop.update(prop.first.addAllAndNotify(rp.first))
 
                         // Nullable
                         if(lp.isNullable){
@@ -178,10 +205,10 @@ class Parsing[Kind] {
                         prop.snf.addAll(lp.snf)
                         prop.snf.addAll(rp.snf)
                         if(lp.isNullable){
-                            prop.update(addAllAndNotify(prop.snf,rp.first))
+                            prop.update(prop.snf.addAllAndNotify(rp.first))
                         }
                         if(rp.isNullable){
-                            prop.update(addAllAndNotify(prop.snf,lp.first))
+                            prop.update(prop.snf.addAllAndNotify(lp.first))
                         }
 
                         // Conflict
@@ -213,10 +240,10 @@ class Parsing[Kind] {
                         prop.isProductive = lp.isProductive && rp.isProductive
                         // First
                         if(rp.isProductive){
-                            prop.update(addAllAndNotify(prop.first,lp.first))
+                            prop.update(prop.first.addAllAndNotify(lp.first))
                         }
                         if(lp.isNullable){
-                            prop.update(addAllAndNotify(prop.first,rp.first))
+                            prop.update(prop.first.addAllAndNotify(rp.first))
                         }
                         // Nullable
                         if(lp.isNullable && rp.isNullable){
@@ -224,10 +251,10 @@ class Parsing[Kind] {
                         }
                         // Should-Not-Follow
                         if(rp.isNullable){
-                            prop.update(addAllAndNotify(prop.snf,lp.snf))
+                            prop.update(prop.snf.addAllAndNotify(lp.snf))
                         }
                         if(lp.isProductive){
-                            prop.update(addAllAndNotify(prop.snf,lp.snf))
+                            prop.update(prop.snf.addAllAndNotify(lp.snf))
                         }
                         // Conflict
                         val has = lp.hasConflict || rp.hasConflict
@@ -274,41 +301,33 @@ class Parsing[Kind] {
             }
         }
 
-
     /**
-     *  Add all item in `that` to `thiz`. 
-     *  @param thiz set to add item to
-     *  @param that set to take item from
-     *  
-     *  @return `true` if thiz has changed, `false` otherwise
+     * Add a nullable to the syntax id
      */
-    private def addAllAndNotify[A](thiz: Set[A], that:Set[A]):Boolean = {
-        if(that.subsetOf(thiz)){
-            false
-        } else {
-            thiz.addAll(that)
-            true
-        }
-    }
-
     private def addToNullableTable(id:Int, opt : Option[Nullable]) = {
         opt match {
             case None => ()
             case Some(v) => nullable.put(id, v)
         }
     }
+}
 
-
-    private def printSetContent(set: Set[?]): String = {
-        if set.isEmpty then
-            "<None>"
-        else
-            val h = set.head
-            val t = set.tail
-            t.foldLeft(s"$h")((str,elem) => str + s", $elem")
+object Parsing {
+    /**
+     * Apply the syntax definition to a new Parsing, and return the result
+     * 
+     * @param sd the syntax definition
+     * @return the partial parsing table created by the Parsing object
+     */
+    def apply[K](sd: SyntaxDefinition[?,?,K]):PartialParsingTable[K] = {
+        val parsing = new Parsing[K]
+        parsing(sd)
     }
 
-    case class Properties(val syntax: Syntax[Any,?,Kind]){
+    /**
+     * Properties of the given syntax
+     */
+    private case class Properties[Kind](val syntax: Syntax[Any,?,Kind]){
         val first: Set[Kind] = Set()
         val snf: Set[Kind] = Set()
         var transform: Boolean = false
@@ -323,19 +342,59 @@ class Parsing[Kind] {
         def update(b: Boolean) = updated = updated || b
     }
 
+    /**
+     * Conflict that can arise during the construction of the
+     * parsing table
+     * 
+     * @param msg an error message
+     */
     enum LL1Conflict(msg: String) extends Exception(msg) {
+        /** A nullable conflict */
         case NullableNullable() extends LL1Conflict(s"Nullable Conflict : Two branches of a disjunction are nullable")
-        case FirstFirst(kind: Set[Kind]) extends LL1Conflict(s"First-First Conflict : Two branches of a disjunction have non disjoint first sets : ${printSetContent(kind)}")
-        case SNFFirst(kind: Set[Kind]) extends LL1Conflict(s"First-Follow Conflict : The should-not-follow set of the left-hand side of a sequence and the first set of the right-hand side of that sequence are not disjoint: ${printSetContent(kind)}")
+        /**
+         * First first conflict
+         * 
+         * @param kind the set of kind that are causing the conflict
+         */
+        case FirstFirst[Kind](kind: Set[Kind]) extends LL1Conflict(s"First-First Conflict : Two branches of a disjunction have non disjoint first sets : ${kind.printSetContent}")
+        /**
+         * First Follow conflict
+         * 
+         * @param kind the set of kind that are causing the conflict
+         */
+        case SNFFirst[Kind](kind: Set[Kind]) extends LL1Conflict(s"First-Follow Conflict : The should-not-follow set of the left-hand side of a sequence and the first set of the right-hand side of that sequence are not disjoint: ${kind.printSetContent}")
 
         override def toString = s"\n⚠️ $msg ⚠️\n"
     }
-}
 
-object Parsing {
-    def apply[K](sd: SyntaxDefinition[?,?,K]):PartialParsingTable[K] = {
-        val parsing = new Parsing[K]
-        parsing(sd)
+    extension [A](thiz:Set[A]){
+        /**
+         *  Add all item in `that` to `thiz`. 
+         *  @param thiz set to add item to
+         *  @param that set to take item from
+         *  
+         *  @return `true` if thiz has changed, `false` otherwise
+         */
+        private def addAllAndNotify(that:Set[A]):Boolean = {
+            if(that.subsetOf(thiz)){
+                false
+            } else {
+                thiz.addAll(that)
+                true
+            }
+        }
+
+        /**
+         * Print the content of a set in a clearer way
+         */
+        private def printSetContent: String = {
+        if thiz.isEmpty then
+            "<None>"
+        else
+            val h = thiz.head
+            val t = thiz.tail
+            t.foldLeft(s"$h")((str,elem) => str + s", $elem")
+        }
     }
 }
 
