@@ -20,9 +20,13 @@ import scala.quoted._
  * parsing instruction
  * @param nullable a Map from the syntax id (which is nullable) to the
  * actual value (or a reference to the syntax that hold them)
+ * 
+ * @note This class shouldn't be used, it just can't be made
+ * private to the `ll1compiletime` package because it is inlined
+ * by the macros
  *              
  */
-class PartialParsingTable[Kind](
+class PartialParsingTable[Kind] (
     private val entry: Int,
     private val table: Map[(Int,Kind), SymboleType],
     private val nullable: Map[Int,Nullable]

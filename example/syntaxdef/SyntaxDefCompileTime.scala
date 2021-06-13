@@ -1,12 +1,6 @@
 package example.syntaxdef
 
-import ll1compiletime.syntax.IdCounter
-import ll1compiletime.syntax.Syntax
-import ll1compiletime.syntax.Syntax._
-import ll1compiletime.syntax.~
-import ll1compiletime.syntax.SyntaxDefinition
-
-import ll1compiletime.parser._
+import ll1compiletime._
 
 import scala.quoted._
 
@@ -30,7 +24,7 @@ inline def getPartialParsingTable = ${init}
  * The macro computing the partial parsing table at compile time
  */ 
 def init(using Quotes) = {
-    Expr(Parsing(SyntaxDef))
+    Expr(buildParsingTable(SyntaxDef))
 }
 
 /**
@@ -45,9 +39,6 @@ object SyntaxDef extends SyntaxDefinition[Int,MyToken,MyKind] {
     import MyKind._
 
     def getKind(t:MyToken):MyKind = MyKind.getKind(t)
-
-    // syntax id counter, gives id to syntax
-    given idc:IdCounter = new IdCounter()
 
     // ----- The Syntax definition itself ---------
 

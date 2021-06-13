@@ -12,7 +12,7 @@ import Parsing._
 import scala.quoted._
 import scala.collection.mutable.{Set,Map,Queue}
 
-class Parsing[Kind] {
+private[ll1compiletime] class Parsing[Kind] {
     private val ready = Queue[Int]()
     private val idToProperties: Map[Int, Properties[Kind]] = Map()
     private val childToParent: Map[Int, Set[Int]] = Map()
@@ -312,7 +312,7 @@ class Parsing[Kind] {
     }
 }
 
-object Parsing {
+private[ll1compiletime] object Parsing {
     /**
      * Apply the syntax definition to a new Parsing, and return the result
      * 

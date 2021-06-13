@@ -1,6 +1,6 @@
 package ll1compiletime.syntax
 
-import scala.annotation.tailrec
+import ll1compiletime.~
  
 
 sealed trait Syntax[A,Token,Kind](using idc:IdCounter){
@@ -107,24 +107,7 @@ object Syntax {
   }
 }
 
-/**
- * A pair of value
- * 
- * Used as infix type
- * 
- * @example case a ~ b ~ c => ???
- * 
- * @param _1 first value
- * @param _2 second value
- */
-case class ~[+A, +B](_1: A, _2: B) {
-    /**
-     * Build a pair from this pair and a new value
-     * 
-     * @param next the value to append to this pair
-     */
-    def ~[C](next: C): (A ~ B) ~ C = new ~(this, next)
-}
+
 
 
 /**

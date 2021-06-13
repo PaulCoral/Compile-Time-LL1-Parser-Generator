@@ -4,7 +4,7 @@ package ll1compiletime.parser
 import scala.quoted._
 import scala.quoted.ToExpr._
 
-import ll1compiletime.syntax.~
+import ll1compiletime.~
 
 import ParsingTable.ParsingTableContext._
 import ParsingTable.SymboleType._

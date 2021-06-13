@@ -3,7 +3,7 @@ package ll1compiletime.syntax
 /**
  * A counter used to provide Ids
  */
-class IdCounter {
+private[ll1compiletime] class IdCounter {
     /** the internal counter */
     private var id = 0
 

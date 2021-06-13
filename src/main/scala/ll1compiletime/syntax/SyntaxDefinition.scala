@@ -1,5 +1,6 @@
 package ll1compiletime.syntax
 
+import ll1compiletime.~
 import ll1compiletime.parser.PartialParsingTable
 import ll1compiletime.parser.ParsingTable
 
@@ -12,14 +13,14 @@ import scala.quoted.ToExpr
  * @tparam T the Token type
  * @tparam K the Kind type
  */
-trait SyntaxDefinition[A,T,K] {
+private[ll1compiletime] trait SyntaxDefinition[A,T,K] {
     /** the type of parsing Tokens */
     type Token = T
     /** the type of Kind of the parsing Tokens */
     type Kind = K
 
     /** a given IdCounter that gives unique ids to Syntaxes */
-    given idc:IdCounter
+    final given idc:IdCounter = new IdCounter
 
     /**
      * Type of a syntax in this context of [[SyntaxDefinition]]
