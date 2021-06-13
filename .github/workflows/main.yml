@@ -1,0 +1,28 @@
+name: github pages scaladoc
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2 # Retrieve the content of the repository
+      - uses: olafurpg/setup-scala@v12 # Set up a jdk and sbt
+      - name: scaladoc # Custom action consisting of a shell command
+        run: sbt doc
+      - name: publicdir
+        if: success()
+        run: |
+          mkdir public
+          mv target/scala-3*/api/* public/
+          
+      - name : Deploy to GitHub Pages
+        if: success()
+        uses: crazy-max/ghaction-github-pages@v2
+        with:
+          target_branch: gh-pages
+          build_dir: public
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  
