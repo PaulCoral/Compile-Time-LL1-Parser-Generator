@@ -43,15 +43,6 @@ trait SyntaxDefinition[A,T,K] {
     /* --- Syntax Context : we restrain the context of the syntax for these Token `T` and kind `K` --- */
 
 
-    // Extension to create `~` sequence of values
-    extension [A](thiz:A) {
-        /**
-         * Return a sequence `~` with `thiz` first and then `that`
-         */
-        infix def ~[B](that:B): A ~ B = new ~(thiz,that)
-    }
-
-
     extension [X](thiz: CSyntax[X]) {
 
         /**
@@ -263,7 +254,7 @@ trait SyntaxDefinition[A,T,K] {
      * Return a syntax that is a disjunction of the given syntaxes
      * 
      * @example 
-     * oneOf[X](a,b,...,n)
+     * oneOf[X] (a,b,...,n)
      * // can be seen as
      * (a | b | ... | n | failure[X])
      * 

@@ -3,7 +3,7 @@ package ll1compiletime.syntax
 import ll1compiletime.~
  
 
-sealed trait Syntax[A,Token,Kind](using idc:IdCounter){
+private[ll1compiletime] sealed trait Syntax[A,Token,Kind](using idc:IdCounter){
   val id = idc.nextId
 
   /**
@@ -57,22 +57,22 @@ sealed trait Syntax[A,Token,Kind](using idc:IdCounter){
     this.map(Some(_)) | (Syntax.epsilon(None))
 }
 
-object Syntax {
-  private[ll1compiletime] def accept[A,Token,Kind](k:Kind)(f: PartialFunction[Token,A])(using IdCounter): Syntax[A,Token,Kind] = elem(k).map(f)
+private[ll1compiletime] object Syntax {
+  def accept[A,Token,Kind](k:Kind)(f: PartialFunction[Token,A])(using IdCounter): Syntax[A,Token,Kind] = elem(k).map(f)
 
-  private[ll1compiletime] def epsilon[A,Token,Kind](e: A)(using IdCounter): Syntax[A,Token,Kind] = Success[A,Token,Kind](e)
+  def epsilon[A,Token,Kind](e: A)(using IdCounter): Syntax[A,Token,Kind] = Success[A,Token,Kind](e)
 
-  private[ll1compiletime] def failure[A,Token,Kind](using IdCounter): Syntax[A,Token,Kind] = Failure()
+  def failure[A,Token,Kind](using IdCounter): Syntax[A,Token,Kind] = Failure()
   
-  private[ll1compiletime] def elem[Token,Kind](k: Kind)(using IdCounter): Syntax[Token,Token,Kind] = Elem(k)
+  def elem[Token,Kind](k: Kind)(using IdCounter): Syntax[Token,Token,Kind] = Elem(k)
 
-  private[ll1compiletime] def recursive[A,Token,Kind](syntax: => Syntax[A,Token,Kind])(using IdCounter): Syntax[A,Token,Kind] = Recursive(syntax)
+  def recursive[A,Token,Kind](syntax: => Syntax[A,Token,Kind])(using IdCounter): Syntax[A,Token,Kind] = Recursive(syntax)
 
   /**
    * Collect the inner data of syntax which can't be used
    * at compile time
    */
-  private[ll1compiletime] def runtimeSyntaxData[Token,Kind](
+  def runtimeSyntaxData[Token,Kind](
     syntax: Syntax[?,Token,Kind]
   ):(Map[Int, (Any => Any)],Map[Int, Any]) = {
     import scala.collection.mutable.{Set,Map,Queue}
@@ -118,7 +118,7 @@ object Syntax {
  * @tparam Kind the Kind of the Tokens used in parsing
  * @param value the value produced on an empty sequence of token
  */
-case class Success[A,Token,Kind](value: A)(using IdCounter) extends Syntax[A,Token,Kind]
+private[ll1compiletime] case class Success[A,Token,Kind](value: A)(using IdCounter) extends Syntax[A,Token,Kind]
   
 
 /**
@@ -128,7 +128,7 @@ case class Success[A,Token,Kind](value: A)(using IdCounter) extends Syntax[A,Tok
  * @tparam Token the Token type used in parsing
  * @tparam Kind the Kind of the Tokens used in parsing
  */
-case class Failure[A,Token,Kind]()(using IdCounter) extends Syntax[A,Token,Kind]
+private[ll1compiletime] case class Failure[A,Token,Kind]()(using IdCounter) extends Syntax[A,Token,Kind]
   
 
 /**
@@ -139,7 +139,7 @@ case class Failure[A,Token,Kind]()(using IdCounter) extends Syntax[A,Token,Kind]
  * @tparam Kind the Kind of the Tokens used in parsing
  * @param e the Kind of the Token to parse
  */
-case class Elem[Token,Kind](e: Kind)(using IdCounter) extends Syntax[Token,Token,Kind]
+private[ll1compiletime] case class Elem[Token,Kind](e: Kind)(using IdCounter) extends Syntax[Token,Token,Kind]
   
 
 /**
@@ -151,7 +151,7 @@ case class Elem[Token,Kind](e: Kind)(using IdCounter) extends Syntax[Token,Token
  * @param inner the inner syntax
  * @param f the function to apply to the parsed value
  */
-case class Transform[A,B,Token,Kind](inner: Syntax[A,Token,Kind],f : A => B)(using IdCounter) extends Syntax[B,Token,Kind]
+private[ll1compiletime] case class Transform[A,B,Token,Kind](inner: Syntax[A,Token,Kind],f : A => B)(using IdCounter) extends Syntax[B,Token,Kind]
   
 
 /**
@@ -160,7 +160,7 @@ case class Transform[A,B,Token,Kind](inner: Syntax[A,Token,Kind],f : A => B)(usi
  * @param left the first syntax in the sequence
  * @param right the second syntax in the sequence
  */
-case class Sequence[A, B,Token,Kind](left: Syntax[A,Token,Kind], right: Syntax[B,Token,Kind])(using IdCounter) extends Syntax[A ~ B,Token,Kind]
+private[ll1compiletime] case class Sequence[A, B,Token,Kind](left: Syntax[A,Token,Kind], right: Syntax[B,Token,Kind])(using IdCounter) extends Syntax[A ~ B,Token,Kind]
 
 
 /**
@@ -169,7 +169,7 @@ case class Sequence[A, B,Token,Kind](left: Syntax[A,Token,Kind], right: Syntax[B
  * @param left one of the syntax
  * @param left the other syntax
  */
-case class Disjunction[A,Token,Kind](left: Syntax[A,Token,Kind], right: Syntax[A,Token,Kind])(using IdCounter) extends Syntax[A,Token,Kind]
+private[ll1compiletime] case class Disjunction[A,Token,Kind](left: Syntax[A,Token,Kind], right: Syntax[A,Token,Kind])(using IdCounter) extends Syntax[A,Token,Kind]
   
 
 /**
@@ -177,12 +177,12 @@ case class Disjunction[A,Token,Kind](left: Syntax[A,Token,Kind], right: Syntax[A
  * 
  * @param syntax the inner syntax to define as recursive
  */
-class Recursive[A,Token,Kind](syntax: => Syntax[A,Token,Kind])(using IdCounter) extends Syntax[A,Token,Kind]{
+private[ll1compiletime] class Recursive[A,Token,Kind](syntax: => Syntax[A,Token,Kind])(using IdCounter) extends Syntax[A,Token,Kind]{
   lazy val inner = syntax
   override def toString = s"<Recursive_id:$id>"
 }
 
-object Recursive {
+private[ll1compiletime] object Recursive {
 
   /**
    * Construct a recursive syntax form the inner syntax

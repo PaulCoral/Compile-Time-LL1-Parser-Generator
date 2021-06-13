@@ -9,7 +9,7 @@ lazy val root = project
   .in(file("."))
   .settings(
     commonSettings,
-    name := "LL1-Compile-Time",
+    name := "Compile Time LL1 Parser",
     version := "0.1.0",
 
     scalaVersion := scala3Version,

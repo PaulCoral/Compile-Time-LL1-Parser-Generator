@@ -13,7 +13,9 @@
  * - A macro call (inlined macro call + macro definition itself) 
  * with a call to [[ll1compiletime.buildParsingTable]] with the syntax
  * definition created in the following point
- * - The syntax definition in an object exteded with the SyntayDefintion trait
+ * - The syntax definition in an object exteded with the SyntayDefintion trait.
+ * See the operator in [[ll1compiletime.syntax.SyntaxDefinition]]
+ * 
  * 
  * @example {
  *  inline def getPartialParsingTable = ${init}
@@ -27,20 +29,27 @@
 package ll1compiletime {
     
     /**
-     * The trait to define a syntax
+     * The trait to define a syntax.
+     * See the operators here [[ll1compiletime.syntax.SyntaxDefinition]]
      * 
      * @tparam A the return type of the entry point
      * @tparam T the Token type
      * @tparam K the Kind type
      */
-    trait SyntaxDefinition[A,T,K] extends ll1compiletime.syntax.SyntaxDefinition[A,T,K]
+    type SyntaxDefinition[A,T,K] = ll1compiletime.syntax.SyntaxDefinition[A,T,K]
 
     /**
      * A pair of value
      * 
      * Used as infix type
      * 
-     * @example case a ~ b ~ c => ???
+     * @example {{{
+     *  val s: CSyntax[A ~ B] = ???
+     *  s.map { 
+     *      case a ~ b => ??? 
+     *  } 
+     * }}}
+     * 
      * 
      * @param _1 first value
      * @param _2 second value
@@ -54,10 +63,10 @@ package ll1compiletime {
         def ~[C](next: C): (A ~ B) ~ C = new ~(this, next)
     }
 
-
     /**
      * Apply the syntax definition to a new Parsing, and return the result
      * 
+     * @tparam K the Token Kind used in the parser
      * @param sd the syntax definition
      * @return the partial parsing table created by the Parsing object
      */
