@@ -1,0 +1,34 @@
+.
+
+### A LL1 parser with compile time features
+
+This package provide a library based on
+[Scall1on](https://github.com/epfl-lara/scallion)
+to build LL1 parser, which syntax analysis and (most of) the parser 
+construction can be done at compile time using macros.
+
+The library itself does not contain compile time code, but it is designed
+to be used with Scala 3 macros without any issue.
+
+To use it you should put the following things in **A SINGLE FILE**, so
+that it can be used with macros
+
+- A macro call (inlined macro call + macro definition itself) 
+with a call to [[ll1compiletime.buildParsingTable buildParsingTable]] with the syntax
+definition created in the following point
+- The syntax definition in an object exteded with the SyntayDefintion trait.
+See the [[ll1compiletime.syntax.SyntaxDefinition operators]]
+
+
+@example {{{
+    /* macro inlined call */
+    inline def getPartialParsingTable = ${init}
+
+    /* macro definition */
+    def init(using Quotes) = Expr(buildParsingTable(SyntaxDef))
+
+    /* syntax defintion */
+    object SyntaxDef extends SyntaxDefinition[Int,MyToken,MyKind] {
+        // syntax defintion
+    }
+}}}
