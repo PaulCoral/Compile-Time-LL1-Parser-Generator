@@ -31,7 +31,7 @@ class Parsing[Kind] {
         if(conflicts.nonEmpty){
             throw Exception(conflicts.toString)
         }
-        PartialParsingTable[Kind](s.id, table.toMap, nullable.toMap)
+        new PartialParsingTable[Kind](s.id, table.toMap, nullable.toMap)
     }
 
     /**

@@ -22,7 +22,7 @@ import scala.quoted._
  * actual value (or a reference to the syntax that hold them)
  *              
  */
-case class PartialParsingTable[Kind] private[ll1compiletime](
+class PartialParsingTable[Kind](
     private val entry: Int,
     private val table: Map[(Int,Kind), SymboleType],
     private val nullable: Map[Int,Nullable]
