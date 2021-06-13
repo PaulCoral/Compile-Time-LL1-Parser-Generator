@@ -1,7 +1,7 @@
 
 package ll1compiletime.parser
 
-import ParsingTable.{ParsingTableInstruction,Nullable}
+import ParsingTable.{SymboleType,Nullable}
 import ll1compiletime.syntax.{Syntax, SyntaxDefinition}
 
 import scala.quoted._
@@ -22,10 +22,14 @@ import scala.quoted._
  * actual value (or a reference to the syntax that hold them)
  *              
  */
-case class PartialParsingTable[Kind](entry: Int, table: Map[(Int,Kind), ParsingTableInstruction], nullable: Map[Int,Nullable]){
+case class PartialParsingTable[Kind] private[ll1compiletime](
+    private val entry: Int,
+    private val table: Map[(Int,Kind), SymboleType],
+    private val nullable: Map[Int,Nullable]
+){
 
     private def withFunctionTable[A,Token](ft : Map[Int,(Any => Any)],nt:Map[Int,Any],getKind: Token => Kind):ParsingTable[A,Token,Kind] = 
-        ParsingTable[A,Token,Kind](entry, table,nt,nullable,ft,getKind)
+        new ParsingTable[A,Token,Kind](entry, table,nt,nullable,ft,getKind)
 
     private def withFunctionTable[A,Token](s: Syntax[A,Token,Kind],getKind: Token => Kind):ParsingTable[A,Token,Kind] = 
         val (ft, nt) = Syntax.runtimeSyntaxData(s)
@@ -39,6 +43,7 @@ case class PartialParsingTable[Kind](entry: Int, table: Map[(Int,Kind), ParsingT
      * @param sd the SyntaxDefinition which values are used to complete the partial table
      */
     def withFunctionTable[A,Token](sd: SyntaxDefinition[A,Token,Kind]):ParsingTable[A,Token,Kind] = 
+        require(entry == sd.entryPoint.id)
         withFunctionTable(sd.entryPoint,sd.getKind)
 }
 

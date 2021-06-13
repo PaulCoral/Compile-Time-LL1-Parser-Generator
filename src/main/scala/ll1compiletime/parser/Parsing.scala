@@ -3,9 +3,9 @@ package ll1compiletime.parser
 import ll1compiletime.syntax._
 
 import ParsingTable.ParsingTableContext
-import ParsingTable.ParsingTableInstruction
+import ParsingTable.SymboleType
 import ParsingTable.ParsingTableContext._
-import ParsingTable.ParsingTableInstruction._
+import ParsingTable.SymboleType._
 import ParsingTable.{Nullable,Leaf,Node}
 import Parsing._
 
@@ -17,7 +17,7 @@ class Parsing[Kind] {
     private val idToProperties: Map[Int, Properties[Kind]] = Map()
     private val childToParent: Map[Int, Set[Int]] = Map()
     private val conflicts: Set[LL1Conflict] = Set()
-    private val table: Map[(Int,Kind),ParsingTableInstruction] = Map()
+    private val table: Map[(Int,Kind),SymboleType] = Map()
     private val nullable: Map[Int,Nullable] = Map()
 
     /**
