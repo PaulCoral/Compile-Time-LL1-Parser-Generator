@@ -226,10 +226,10 @@ private[ll1compiletime] class Parsing[Kind] {
 
                         // Parsing Table
                         lp.first.foreach { k =>
-                            table.put((s.id,k), NonTerminal(left.id, Passed))
+                            table.put((s.id,k), table((left.id,k)))//NonTerminal(left.id, Passed))
                         }
                         rp.first.foreach { k =>
-                            table.put((s.id,k), NonTerminal(right.id, Passed))
+                            table.put((s.id,k), table((right.id,k)))//NonTerminal(right.id, Passed))
                         }
 
 
@@ -292,7 +292,7 @@ private[ll1compiletime] class Parsing[Kind] {
 
                         // Parsing Table
                         child.first.foreach { k =>
-                            table.put((s.id,k), NonTerminal(inner.id, Passed))
+                            table.put((s.id,k), table((inner.id,k)))//NonTerminal(inner.id, Passed))
                         }
 
                     case _ => throw IllegalStateException(s"Unkown Syntax $s")

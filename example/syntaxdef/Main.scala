@@ -21,13 +21,15 @@ import MyToken._
     // lexing the string `str` into tokens
     val tokens = NumberLexer(str) 
 
+    val printToken = tokens.toList
+
     // parsing the tokens into a value
     val result = parsingTable(tokens)
 
     //printing the all the values
     println("-------------------------------------")
     println(s" -> Lexing : ${str}")
-    println(s" -> Parsing : ${tokens}")
+    println(s" -> Parsing : ${printToken}")
     println(s" -> Result : ${result}")
     println(s" -> Expected : ${range.sum}")
     println("--------------------------------------")

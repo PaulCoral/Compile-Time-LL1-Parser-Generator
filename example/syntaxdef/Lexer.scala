@@ -53,9 +53,10 @@ object NumberLexer extends Lexers {
      * 
      * @param msg the string to lex
      */
-    def apply(msg: String):List[Token] = {
+    def apply(msg: String):Iterator[Token] = {
         val source = Source.fromString(msg)
-        lexer(source).toList.filter{ 
+        val lex = lexer(source)
+        lex.filter{ 
             case SpaceToken => false
             case _ => true
         }
