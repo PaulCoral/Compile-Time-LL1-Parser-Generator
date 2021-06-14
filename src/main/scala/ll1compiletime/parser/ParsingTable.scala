@@ -11,6 +11,13 @@ import ParsingTable.ParsingTableContext._
 import ParsingTable.SymboleType._
 import ParsingTable._
 
+
+/*
+ * There are some code duplication,but it is for optimisation
+ * purpose. Not factoring out in function let the code be
+ * tail recursive which avoid stackoverflow and improve performance 
+ */
+
 /**
  * A parsing table which can return a result
  * from a token sequence
@@ -65,7 +72,6 @@ class ParsingTable[A,Token,Kind] private[ll1compiletime](
                 else
                     None
         }
-
         opt match {
             case Some(t) => {
                 locate(t,s,c) match {
@@ -81,9 +87,17 @@ class ParsingTable[A,Token,Kind] private[ll1compiletime](
                                     case Right((s2,c2)) => 
                                         // new found syntax, value saved in new context
                                         parse(s2,c2,tokens)
-                            }
+                                }
 
-                            case NonTerminal(s2, cElem) => parse(s2, cElem::c,tokens,Some(t))
+                            case NonTerminal(_, cElem) => //parse(s2, cElem:::c,tokens,Some(t))
+                                plugValue(t,cElem:::c) match {
+                                    case Left(value) => 
+                                        // value and context empty Finished
+                                        result(value,tokens.toList)
+                                    case Right((s2,c2)) => 
+                                        // new found syntax, value saved in new context
+                                        parse(s2,c2,tokens)
+                                }
                         }
                     case Some(Left(v)) => 
                         // nullable path taken
@@ -102,7 +116,7 @@ class ParsingTable[A,Token,Kind] private[ll1compiletime](
             case None => 
                 nullable.get(s) match {
                     case Some(v) => plugValue(v.get(using nt),c) match {
-                        case Left(v) => result(v,Nil)
+                        case Left(v2) => result(v2,Nil)
                         case Right((s2,c2)) => parse(s,c, Iterator.empty)
                     }
                     case None => UnexpectedEnd(getFirstSetOfSyntax(s))
@@ -164,7 +178,7 @@ class ParsingTable[A,Token,Kind] private[ll1compiletime](
 private[ll1compiletime] object ParsingTable{
     /** Instruction on the next thing to do during parsing. */
     enum SymboleType {
-        case NonTerminal(id: Int, elem: ParsingTableContext) extends SymboleType
+        case NonTerminal(id: Int, elem: List[ParsingTableContext]) extends SymboleType
         case Terminal extends SymboleType
     }
 

@@ -11,6 +11,7 @@ import Parsing._
 
 import scala.quoted._
 import scala.collection.mutable.{Set,Map,Queue}
+import scala.annotation.tailrec
 
 private[ll1compiletime] class Parsing[Kind] {
     private val ready = Queue[Int]()
@@ -161,7 +162,7 @@ private[ll1compiletime] class Parsing[Kind] {
                         // Parsing Table
                         table.put((s.id,k), Terminal)
 
-                    case Transform(inner,f) =>
+                    case Transform(inner,_) =>
                         val child = idToProperties(inner.id)
                         // Productive
                         prop.isProductive = child.isProductive
@@ -179,7 +180,7 @@ private[ll1compiletime] class Parsing[Kind] {
 
                         // Parsing Table
                         child.first.foreach { k =>
-                            table.put((s.id,k), NonTerminal(inner.id, ApplyF(s.id)))
+                            table.put((s.id,k), symboleType(inner.id,k,ApplyF(s.id)))
                         }
                             
 
@@ -267,11 +268,11 @@ private[ll1compiletime] class Parsing[Kind] {
 
                         // Parsing Table
                         lp.first.foreach { k =>
-                            table.put((s.id,k), NonTerminal(left.id, FollowedBy(right.id)))
+                            table.put((s.id,k), symboleType(left.id,k ,FollowedBy(right.id)))
                         }
                         if (lp.isNullable) {
                             rp.first.foreach { k =>
-                                table.put((s.id,k), NonTerminal(right.id, PrependedByNullable(lp.syntax.id)))
+                                table.put((s.id,k), symboleType(right.id, k,PrependedByNullable(lp.syntax.id)))
                             }
                         }
 
@@ -309,6 +310,16 @@ private[ll1compiletime] class Parsing[Kind] {
             case None => ()
             case Some(v) => nullable.put(id, v)
         }
+    }
+
+    
+    private def symboleType(
+        ns: Int,
+        k: Kind,
+        c: ParsingTableContext
+    ):SymboleType = table((ns,k)) match {
+        case NonTerminal(i,cs) => NonTerminal(i,cs :+ c)
+        case Terminal => NonTerminal(ns,List(c))
     }
 }
 
