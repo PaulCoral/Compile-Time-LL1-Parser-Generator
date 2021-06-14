@@ -23,8 +23,12 @@ object NumberLexer extends Lexers {
     // definition of the lexer
     val lexer = Lexer(
         // `,` and white space are maped to `SeparatorToken`
-        elem(',') | elem(_.isWhitespace) |> {
+        elem(',') |> {
             (_,_) => SeparatorToken
+        },
+
+        elem(_.isWhitespace) |> {
+            (_,_) => SpaceToken
         },
 
         /** Digits are maped to IntLitToken when possible */
@@ -52,7 +56,7 @@ object NumberLexer extends Lexers {
     def apply(msg: String):List[Token] = {
         val source = Source.fromString(msg)
         lexer(source).toList.filter{ 
-            case SeparatorToken => false
+            case SpaceToken => false
             case _ => true
         }
     }

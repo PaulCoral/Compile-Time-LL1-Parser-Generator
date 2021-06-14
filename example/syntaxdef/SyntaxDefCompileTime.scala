@@ -3,6 +3,7 @@ package example.syntaxdef
 import ll1compiletime._
 
 import scala.quoted._
+import scala.language.implicitConversions
 
 /*
  * !!! READ THIS !!! 
@@ -40,6 +41,10 @@ object SyntaxDef extends SyntaxDefinition[Int,MyToken,MyKind] {
 
     def getKind(t:MyToken):MyKind = MyKind.getKind(t)
 
+    given Conversion[Char,CSyntax[Token]] with {
+        def apply(c: Char) = elem(SeparatorKind)
+    }
+
     // ----- The Syntax definition itself ---------
 
     lazy val elemInt: CSyntax[Int] = accept(IntKind){ case IntLitToken(v) => v }
@@ -52,12 +57,10 @@ object SyntaxDef extends SyntaxDefinition[Int,MyToken,MyKind] {
         case a ~ b => a + b
     }
 
-    lazy val sum: CSyntax[Int] = recursive { 
-        rec_sum_map | eof
-    }
+    lazy val sum: CSyntax[Int] = repsep(elemInt,',').map(_.sum)
 
     // --------------------------------------------
 
     // Uncomment to get a LL1 Nullable error
-    lazy val entryPoint = sum // | epsilon(1) | epsilon(0) 
+    lazy val entryPoint = sum ~<~ elem(EOFKind) // | epsilon(1) | epsilon(0) 
 }

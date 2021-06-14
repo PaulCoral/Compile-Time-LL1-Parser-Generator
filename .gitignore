@@ -2,7 +2,7 @@
 .metals/
 .vscode/
 .bloop/
-.idea/
+.idea
 
 project/project/
 project/target/

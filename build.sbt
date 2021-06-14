@@ -32,7 +32,10 @@ lazy val example = Project("example", file("example"))
   .settings(
     commonSettings,
     name := "benchmark",
-    Compile / scalaSource  := baseDirectory.value,
+    run / fork := true,
+    run / baseDirectory := file("."),
+    Compile / scalaSource := baseDirectory.value / "src",
+    Test / scalaSource := baseDirectory.value / "src",
     resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/releases",
     libraryDependencies += ("com.storm-enroute" %% "scalameter" % "0.21").cross(CrossVersion.for3Use2_13),
     testFrameworks += new TestFramework("org.scalameter.ScalaMeterFramework"),

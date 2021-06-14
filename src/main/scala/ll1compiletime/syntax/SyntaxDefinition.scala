@@ -106,6 +106,15 @@ trait SyntaxDefinition[A,T,K] {
             thiz.map(f)
 
         /**
+         * Upcase `thiz` to a supertype `B` of `X`
+         * 
+         * @tparam B the supertype to upcast to
+         * @return a new syntax with `B` as inner type
+         */
+        def up[B >: X]: CSyntax[B] =
+            thiz.map(_.asInstanceOf[B])
+
+        /**
          * Syntax Sequence operator
          * 
          * Returns a new syntax which is the sequence of syntaxes `thiz`
@@ -206,7 +215,7 @@ trait SyntaxDefinition[A,T,K] {
      */
     def many[A](rep: CSyntax[A])(using IdCounter): CSyntax[Seq[A]] = {
         lazy val rest: CSyntax[Seq[A]] = recursive {
-            ((rep +: rest) | epsilon(List()))
+            ((rep +: rest) | epsilon(Vector()))
         }
         rest
     }
@@ -267,13 +276,13 @@ trait SyntaxDefinition[A,T,K] {
      * 
      */
     def oneOf[A](syntaxes: CSyntax[A]*)(using IdCounter): CSyntax[A] = {
-        var queue = syntaxes.toVector :+ failure[A]
+        var queue = syntaxes.toVector.appended(failure[A])
 
         while (queue.size > 1) {
             val a = queue(0)
             val b = queue(1)
             queue = queue.drop(2)
-            queue :+= a | b
+            queue = queue.appended(a | b)
         }
 
         queue.head

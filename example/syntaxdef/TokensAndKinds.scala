@@ -9,6 +9,8 @@ enum MyToken {
    * @param value its value
    */
   case IntLitToken(value: Int) extends MyToken
+  /** Space Token */
+  case SpaceToken extends MyToken
   /** Separator Token */
   case SeparatorToken extends MyToken
   /** 
@@ -24,6 +26,8 @@ enum MyToken {
 enum MyKind {
   /** Integer Kind */
   case IntKind extends MyKind
+  /** Space Kind */
+  case SpaceKind extends MyKind
   /** Separator Kind */
   case SeparatorKind extends MyKind
   /** Error Kind */
@@ -39,6 +43,7 @@ object MyKind {
   given MyKindToExpr : ToExpr[MyKind] with {
     def apply(k:MyKind)(using Quotes): Expr[MyKind] = k match {
       case IntKind => '{IntKind}
+      case SpaceKind => '{SpaceKind}
       case SeparatorKind => '{SeparatorKind}
       case ErrorKind => '{ErrorKind}
       case EOFKind => '{EOFKind}
@@ -56,6 +61,7 @@ object MyKind {
     import MyKind._
     t match {
       case IntLitToken(_) => IntKind
+      case SpaceToken => SpaceKind
       case SeparatorToken => SeparatorKind
       case ErrorToken(_) => ErrorKind
       case EOFToken => EOFKind
