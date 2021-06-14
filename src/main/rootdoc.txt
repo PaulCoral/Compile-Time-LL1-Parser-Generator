@@ -13,6 +13,7 @@ to be used with Scala 3 macros without any issue.
 To use it you should put the following things in **A SINGLE FILE**, so
 that it can be used with macros
 
+- `import ll1compiletime._`
 - A macro call (inlined macro call + macro definition itself) 
 with a call to [[ll1compiletime.buildParsingTable buildParsingTable]] with the syntax
 definition created in the following point
