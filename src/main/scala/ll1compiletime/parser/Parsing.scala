@@ -79,7 +79,6 @@ private[ll1compiletime] class Parsing[Kind] {
                     
                     case Failure() =>
                         prop.isProductive = false
-                        prop.hasConflict = true
                         ready.enqueue(s.id)
                         prop.update(true)
 
