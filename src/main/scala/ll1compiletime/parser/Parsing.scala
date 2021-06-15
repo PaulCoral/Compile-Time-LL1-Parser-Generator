@@ -89,7 +89,6 @@ private[ll1compiletime] class Parsing[Kind] {
 
                     case Transform(inner,f) => 
                         addChildToParent(inner.id,s.id)
-                        prop.transform = false
                         queue.enqueue(inner.asInstanceOf[Syntax[Any,?,Kind]]) 
 
                     case Disjunction(left, right) =>
@@ -340,7 +339,6 @@ private[ll1compiletime] object Parsing {
     private case class Properties[Kind](syntax: Syntax[Any,?,Kind]){
         val first: Set[Kind] = Set()
         val snf: Set[Kind] = Set()
-        var transform: Boolean = false
         var nullable:Option[Nullable] = None
         var isProductive:Boolean = true
         var hasConflict = false
