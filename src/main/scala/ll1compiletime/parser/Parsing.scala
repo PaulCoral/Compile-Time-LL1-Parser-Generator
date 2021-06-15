@@ -338,7 +338,7 @@ private[ll1compiletime] object Parsing {
     /**
      * Properties of the given syntax
      */
-    private case class Properties[Kind](val syntax: Syntax[Any,?,Kind]){
+    private case class Properties[Kind](syntax: Syntax[Any,?,Kind]){
         val first: Set[Kind] = Set()
         val snf: Set[Kind] = Set()
         var transform: Boolean = false
