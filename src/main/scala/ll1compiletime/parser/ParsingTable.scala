@@ -239,6 +239,7 @@ private[ll1compiletime] object ParsingTable{
 
     /** Represent a reference to a nullable value */
     sealed trait Nullable {
+        private var cache: Option[Any] = None
         /** 
          * Return the value corresponding to the reference of
          * this `Nullable`
@@ -246,7 +247,28 @@ private[ll1compiletime] object ParsingTable{
          * @param table a Map of id to values
          * @return the result corresponding to the reference
          */
-        def get(using table: Map[Int,Any]):Any
+        def get(using table: Map[Int,Any]):Any = {
+            @tailrec
+            def rec(n:Nullable,stack:List[Either[Any,Nullable]]):Any = n match {
+                case Leaf(i) => 
+                    val v = table(i).asInstanceOf[Any]
+                    stack match {
+                        case Nil => v
+                        case Left(l) :: rest => (new ~(l,v)).asInstanceOf[Any]
+                        case Right(r) :: rest => rec(r,Left(v)::stack)
+                    }
+                    
+                case Node(left,right) => rec(left, Right(right)::stack)
+            }
+
+            cache match {
+                case None => 
+                    val tmp = rec(this,Nil)
+                    cache = Some(tmp)
+                    tmp
+                case Some(v) => v
+            }
+        }
     }
     object Nullable {
         /** Get `quoted.Expr` from Nullable */
@@ -261,40 +283,11 @@ private[ll1compiletime] object ParsingTable{
      * Hold a direct reference to a value
      * @param i direct reference to the value
      */
-    case class Leaf(i:Int) extends Nullable{
-        private var cache: Option[Any] = None
-        /**
-         * Get the value from that direct reference
-         * 
-         * @param table a Map from id to values
-         */
-        def get(using table: Map[Int,Any]):Any = cache match {
-            case None => 
-                val tmp = table(i).asInstanceOf[Any]
-                cache = Some(tmp)
-                tmp
-            case Some(v) => v
-        }
-    }
+    case class Leaf(i:Int) extends Nullable
     /**
      * Hold a composed reference to a value
      * @param left the left reference of the composition
      * @param right the left reference of the composition
      */
-    case class Node(left: Nullable, right: Nullable) extends Nullable {
-        private var cache: Option[Any] = None
-        /**
-         * Get the value from the composed reference. Compose the value
-         * of left with the value of right
-         * 
-         * @param table a Map from id to values
-         */
-        def get(using table: Map[Int,Any]):Any = cache match {
-            case None => 
-                val tmp = (new ~(left.get, right.get)).asInstanceOf[Any]
-                cache = Some(tmp)
-                tmp
-            case Some(v) => v
-        }
-    }
+    case class Node(left: Nullable, right: Nullable) extends Nullable
 }

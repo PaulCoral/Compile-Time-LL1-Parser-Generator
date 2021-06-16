@@ -11,11 +11,12 @@ abstract class BenchmarkFiles extends Bench.OfflineReport {
 
   // Uncomment files from here.
   val files = Gen.enumeration("file")(
+    "normal-10k",
     "normal-100k",
-    //"normal-200k",
+    "normal-200k",
     //"normal-300k",
     //"normal-400k",
-    //"normal-500k",
+    "normal-500k",
     //"normal-600k",
     //"normal-700k",
     //"normal-800k",
