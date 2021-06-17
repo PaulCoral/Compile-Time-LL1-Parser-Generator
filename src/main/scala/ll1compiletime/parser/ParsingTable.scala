@@ -6,6 +6,7 @@ import scala.quoted.ToExpr._
 import scala.annotation.tailrec
 
 import ll1compiletime._
+import ll1compiletime.ParsingResult._
 
 import ParsingTable.ParsingTableContext._
 import ParsingTable.SymboleType._
