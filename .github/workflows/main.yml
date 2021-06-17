@@ -9,7 +9,11 @@ jobs:
     steps:
       - uses: actions/checkout@v2 # Retrieve the content of the repository
       - uses: olafurpg/setup-scala@v12 # Set up a jdk and sbt
+      - name: test
+        if: success()
+        run: sbt test
       - name: scaladoc # Custom action consisting of a shell command
+        if: success()
         run: sbt doc
       - name: publicdir
         if: success()
