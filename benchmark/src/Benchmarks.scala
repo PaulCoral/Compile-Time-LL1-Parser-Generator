@@ -37,7 +37,7 @@ class CompileTimeLL1 extends BenchmarkTokens {
     measure method "parsingTable and parser.apply" in {
       using(tokens) in { ts =>
         import ll1compiletime._
-        val parser = parsingTable.withFunctionTable(SyntaxDef)
+        val parser = SyntaxDef.parser
         assert(
           parser.apply(ts.iterator) match {
             case ParsedSuccessfully(_) => true

@@ -4,6 +4,7 @@ import ll1compiletime._
 
 import scala.quoted._
 import scala.language.implicitConversions
+import ll1compiletime.parser.PartialParsingTable
 
 /*
  * !!! READ THIS !!! 
@@ -19,12 +20,12 @@ import scala.language.implicitConversions
 /**
  * Give the partial parsing table at compile time
  */ 
-inline def getPartialParsingTable = ${init}
+private inline def getPartialParsingTable:PartialParsingTable[SyntaxDef.Kind] = ${init}
 
 /**
  * The macro computing the partial parsing table at compile time
  */ 
-def init(using Quotes) = {
+private def init(using Quotes):Expr[PartialParsingTable[SyntaxDef.Kind]] = {
     Expr(buildParsingTable(SyntaxDef))
 }
 
@@ -40,6 +41,8 @@ object SyntaxDef extends SyntaxDefinition[Int,MyToken,MyKind] {
     import MyKind._
 
     def getKind(t:MyToken):MyKind = MyKind.getKind(t)
+
+    inline def macroCall:PartialParsingTable[Kind] = getPartialParsingTable
 
     given Conversion[Char,CSyntax[Token]] with {
         def apply(c: Char) = elem(SeparatorKind)

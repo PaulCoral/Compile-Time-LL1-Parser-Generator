@@ -39,6 +39,19 @@ trait SyntaxDefinition[A,T,K] {
     def getKind(t: Token):Kind
 
     /**
+     * the macro call for the compile time analysis 
+     * and construction of the syntax
+     * 
+     * @note should abslutely be an inline
+     */
+    inline def macroCall: PartialParsingTable[Kind]
+
+    /**
+     * Return a parsing table corresponding to the defined syntax.
+     */
+    final inline def parser = macroCall.withFunctionTable(this)
+
+    /**
      * The top level syntax, where the parsing begin.
      */
     lazy val entryPoint: CSyntax[A]

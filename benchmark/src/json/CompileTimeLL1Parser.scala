@@ -7,13 +7,14 @@ import json.TokenClass.given
 import scala.quoted._
 import scala.language.implicitConversions
 import javax.swing.JPopupMenu.Separator
+import ll1compiletime.parser.PartialParsingTable
 
 
-inline def parsingTable = ${init}
+private inline def parsingTable = ${init}
 
-def init(using Quotes) = Expr(buildParsingTable(SyntaxDef))
+private def init(using Quotes) = Expr(buildParsingTable(SyntaxDef))
 
-object SyntaxDef extends ll1compiletime.syntax.SyntaxDefinition[json.Value,json.Token,json.TokenClass]{
+object SyntaxDef extends SyntaxDefinition[json.Value,json.Token,json.TokenClass]{
     override def getKind(token: Token): TokenClass = token match {
         case SeparatorToken(value, _) => SeparatorClass(value)
         case BooleanToken(_, _) => BooleanClass
@@ -22,6 +23,8 @@ object SyntaxDef extends ll1compiletime.syntax.SyntaxDefinition[json.Value,json.
         case NullToken(_) => NullClass
         case _ => NoClass
     }
+
+    inline def macroCall:PartialParsingTable[Kind] = parsingTable
 
     val booleanValue: CSyntax[Value] = accept(BooleanClass) {
         case BooleanToken(value, range) => BooleanValue(value, range)
