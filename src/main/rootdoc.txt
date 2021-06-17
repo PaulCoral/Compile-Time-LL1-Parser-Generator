@@ -22,14 +22,26 @@ See the [[ll1compiletime.syntax.SyntaxDefinition operators]]
 
 
 @example {{{
+    /* some file where parsing occures */
+
+    val parser = SyntaxDef.parser
+
+    // ------------------------------------------------------
+    // ------------------------------------------------------
+
+    /* Syntax definition file */
+
     /* macro inlined call */
-    inline def getPartialParsingTable = ${init}
+    private inline def getPartialParsingTable = ${init}
 
     /* macro definition */
-    def init(using Quotes) = Expr(buildParsingTable(SyntaxDef))
+    private def init(using Quotes) = Expr(buildParsingTable(SyntaxDef))
 
     /* syntax defintion */
     object SyntaxDef extends SyntaxDefinition[Int,MyToken,MyKind] {
         // syntax defintion
+
+        // important : INLINE
+        inline def macroCall = getPartialParsingTable
     }
 }}}

@@ -40,7 +40,7 @@ class CompileTimeLL1 extends BenchmarkTokens {
         val parser = SyntaxDef.parser
         assert(
           parser.apply(ts.iterator) match {
-            case ParsedSuccessfully(_) => true
+            case ParsingResult.ParsedSuccessfully(_) => true
             case _ => false
           }
         )

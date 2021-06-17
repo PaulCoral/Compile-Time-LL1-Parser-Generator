@@ -46,7 +46,7 @@ class PartialParsingTable[Kind] (
      * @tparam Token the type of the Tokens used in parsing
      * @param sd the SyntaxDefinition which values are used to complete the partial table
      */
-    def withFunctionTable[A,Token](sd: SyntaxDefinition[A,Token,Kind]):ParsingTable[A,Token,Kind] = 
+    private[ll1compiletime] def withFunctionTable[A,Token](sd: SyntaxDefinition[A,Token,Kind]):ParsingTable[A,Token,Kind] = 
         require(entry == sd.entryPoint.id)
         withFunctionTable(sd.entryPoint,sd.getKind)
 }
