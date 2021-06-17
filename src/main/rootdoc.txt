@@ -26,9 +26,9 @@ See the [[ll1compiletime.syntax.SyntaxDefinition operators]]
 
     val parser = SyntaxDef.parser
 
-    // ------------------------------------------------------
-    // ------------------------------------------------------
+}}}
 
+{{{
     /* Syntax definition file */
 
     /* macro inlined call */
