@@ -116,7 +116,7 @@ class ParsingTable[A,Token,Kind] private[ll1compiletime](
             }
             case None => 
                 nullable.get(s) match {
-                    case Some(v) => plugValue(v.get(using nt),c) match {
+                    case Some(v) => plugValue(v.get(using nt)(using ft),c) match {
                         case Left(v2) => result(v2,Nil)
                         case Right((s2,c2)) => parse(s2,c2, Iterator.empty)
                     }
@@ -143,7 +143,7 @@ class ParsingTable[A,Token,Kind] private[ll1compiletime](
             case Some(instr) => Some(Right(instr))
             case None => // No Kind match this syntax
                 nullable.get(s) match { // so we try to find a nullable value
-                    case Some(value) => Some(Left(value.get(using nt)))
+                    case Some(value) => Some(Left(value.get(using nt)(using ft)))
                     case None => None
 
                 }
@@ -171,7 +171,7 @@ class ParsingTable[A,Token,Kind] private[ll1compiletime](
             case FollowedBy(s)::cs => Right((s,PrependedBy(v)::cs))
             case ApplyF(fId)::cs => plugValue(ft(fId)(v),cs)
             case PrependedBy(vp)::cs => plugValue(new ~(vp,v),cs)
-            case PrependedByNullable(s)::cs => plugValue(new ~(nullable(s).get(using nt),v),cs)
+            case PrependedByNullable(s)::cs => plugValue(new ~(nullable(s).get(using nt)(using ft),v),cs)
         }
     }
 }
@@ -248,18 +248,25 @@ private[ll1compiletime] object ParsingTable{
          * @param table a Map of id to values
          * @return the result corresponding to the reference
          */
-        def get(using table: Map[Int,Any]):Any = {
+        def get(using table: Map[Int,Any])(using ft: Map[Int,Any=>Any]):Any = {
+            trait StackElem
+            case class Left(v:Any) extends StackElem
+            case class Right(n:Nullable) extends StackElem
+            case class Trans(f: Any => Any) extends StackElem
+
             @tailrec
-            def rec(n:Nullable,stack:List[Either[Any,Nullable]]):Any = n match {
+            def rec(n:Nullable,stack:List[StackElem]):Any = n match {
                 case Leaf(i) => 
                     val v = table(i).asInstanceOf[Any]
                     stack match {
-                        case Nil => v
-                        case Left(l) :: rest => (new ~(l,v)).asInstanceOf[Any]
+                        case Left(l) :: _ => (new ~(l,v)).asInstanceOf[Any]
                         case Right(r) :: rest => rec(r,Left(v)::stack)
+                        case Trans(f) :: _ => f(v)
+                        case _ => v
                     }
                     
                 case Node(left,right) => rec(left, Right(right)::stack)
+                case TransNullable(inner,fId) => rec(inner, Trans(ft(fId))::stack)
             }
 
             cache match {
@@ -276,6 +283,7 @@ private[ll1compiletime] object ParsingTable{
         given ToExpr[Nullable] with {
             def apply(n: Nullable)(using Quotes): Expr[Nullable] = n match {
                 case Leaf(i) => '{Leaf(${Expr(i)})}
+                case TransNullable(i,f) => '{TransNullable(${Expr(i)},${Expr(f)})}
                 case Node(l,r) => '{Node(${Expr(l)},${Expr(r)})}
             }
         }
@@ -285,6 +293,12 @@ private[ll1compiletime] object ParsingTable{
      * @param i direct reference to the value
      */
     case class Leaf(i:Int) extends Nullable
+    /**
+     * Hold a reference with a transformation
+     * @param inner the reference to the next nullable
+     * @param f the transform
+     */
+    case class TransNullable(inner:Nullable,f:Int) extends Nullable
     /**
      * Hold a composed reference to a value
      * @param left the left reference of the composition
