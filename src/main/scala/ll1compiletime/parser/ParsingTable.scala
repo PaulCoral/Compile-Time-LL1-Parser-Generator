@@ -118,7 +118,7 @@ class ParsingTable[A,Token,Kind] private[ll1compiletime](
                 nullable.get(s) match {
                     case Some(v) => plugValue(v.get(using nt),c) match {
                         case Left(v2) => result(v2,Nil)
-                        case Right((s2,c2)) => parse(s,c, Iterator.empty)
+                        case Right((s2,c2)) => parse(s2,c2, Iterator.empty)
                     }
                     case None => UnexpectedEnd(getFirstSetOfSyntax(s))
 

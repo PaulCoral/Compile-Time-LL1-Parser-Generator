@@ -6,7 +6,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import scala.quoted._
 
 
-class CompileTimeLL1Test extends AnyFlatSpec {
+class TestP1 extends AnyFlatSpec {
     import MyToken._
     import ParsingResult._
 
@@ -20,11 +20,37 @@ class CompileTimeLL1Test extends AnyFlatSpec {
         ParT(false)
     )
 
-    "Sum parser" should "return 3 with rest" in {
+    "Sum parser" should "return 3" in {
         val parser = P1.SyntaxDefTesting.parser
         val result = parser(tokens.iterator)
         assert(
             result === ParsedSuccessfully(3)
+        )
+    }
+
+    "Sum parser" should "return 3 with rest" in {
+        val parser = P1.SyntaxDefTesting.parser
+        val rest = List(SepT)
+        val result = parser((tokens ++ rest).iterator)
+        assert(
+            result === ParsedSuccessfullyWithRest(3, rest)
+        )
+    }
+
+    "Sum parser" should "Unexpected end" in {
+        val parser = P1.SyntaxDefTesting.parser
+        val result = parser((tokens.take(1)).iterator)
+        assert(
+            result === UnexpectedEnd(Set(getMyKind(tokens.last)))
+        )
+    }
+
+    "Sum parser" should "Unexpected Token" in {
+        val parser = P1.SyntaxDefTesting.parser
+        val unexpected = SepT
+        val result = parser((unexpected :: tokens).iterator)
+        assert(
+            result === UnexpectedToken(getMyKind(unexpected),Set(getMyKind(tokens.head)))
         )
     }
 }
