@@ -42,7 +42,6 @@ object SyntaxDef extends SyntaxDefinition[json.Value,json.Token,json.TokenClass]
         case NullToken(range) => NullValue(range)
     }
 
-    //implicit def separator(char: Char): Syntax[Token] = elem(SeparatorClass(char))
     given Conversion[Char, CSyntax[Token]] with {
         def apply(c: Char):CSyntax[Token] = elem(SeparatorClass(c))
     }
@@ -73,6 +72,4 @@ object SyntaxDef extends SyntaxDefinition[json.Value,json.Token,json.TokenClass]
     }
 
     lazy val entryPoint = value
-
-    //lazy val parser = CParser(value)
 }
