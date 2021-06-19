@@ -19,9 +19,6 @@ trait SyntaxDefinition[A,T,K] {
     /** the type of Kind of the parsing Tokens */
     type Kind = K
 
-    /** a given IdCounter that gives unique ids to Syntaxes */
-    final given idc:IdCounter = new IdCounter
-
     /**
      * Type of a syntax in this context of [[SyntaxDefinition]]
      * 
@@ -29,19 +26,6 @@ trait SyntaxDefinition[A,T,K] {
      */
     type CSyntax[X] = Syntax[X,Token,Kind]
 
-    /**
-     * Return the Kind of a given Token
-     * 
-     * @param t the given Token
-     * 
-     * @return the Kind corresponding to the token
-     */
-    def getKind(t: Token):Kind
-
-    /**
-     * The top level syntax, where the parsing begin.
-     */
-    lazy val entryPoint: CSyntax[A]
 
     /* --- Syntax Context : we restrain the context of the syntax for these Token `T` and kind `K` --- */
 

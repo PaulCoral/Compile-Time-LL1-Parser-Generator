@@ -14,6 +14,13 @@ package ll1compiletime
 type SyntaxDefinition[A,T,K] = ll1compiletime.syntax.SyntaxDefinition[A,T,K]
 
 /**
+ * Define a syntax that will be analyzed at compile time
+ * 
+ * @see [[ll1compiletime.syntax.SyntaxDefinition]] for detail
+ */
+type CompileTime[A,T,K] = ll1compiletime.syntax.CompileTime[A,T,K]
+
+/**
  * A pair of value
  * 
  * Used as infix type
@@ -45,4 +52,4 @@ def ~[C](next: C): (A ~ B) ~ C = new ~(this, next)
  * @param sd the syntax definition
  * @return the partial parsing table created by the Parsing object
  */
-def buildParsingTable[K](parser: SyntaxDefinition[?,?,K]) = ll1compiletime.parser.Parsing(parser)
+def buildParsingTable[K](parser: CompileTime[?,?,K]) = ll1compiletime.parser.Parsing(parser)

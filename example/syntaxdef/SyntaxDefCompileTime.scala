@@ -35,7 +35,7 @@ def init(using Quotes) = {
  * - Token of type `MyToken`
  * - Kind of tpye `MyKind`
  */
-object SyntaxDef extends SyntaxDefinition[Int,MyToken,MyKind] {
+object SyntaxDef extends ll1compiletime.syntax.CompileTime[Int,MyToken,MyKind] {
     import MyToken._
     import MyKind._
 

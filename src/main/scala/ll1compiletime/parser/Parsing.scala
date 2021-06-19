@@ -24,7 +24,7 @@ private[ll1compiletime] class Parsing[Kind] {
     /**
      * Returns a PartialParsingTable from a SyntaxDefinition
      */
-    def apply(sd: SyntaxDefinition[?,?,Kind]):PartialParsingTable[Kind] = {        
+    def apply(sd: CompileTime[?,?,Kind]):PartialParsingTable[Kind] = {        
         val s = sd.entryPoint
         cleaning
         setUp(s.asInstanceOf[Syntax[Any,?,Kind]])
@@ -328,7 +328,7 @@ private[ll1compiletime] object Parsing {
      * @param sd the syntax definition
      * @return the partial parsing table created by the Parsing object
      */
-    def apply[K](sd: SyntaxDefinition[?,?,K]):PartialParsingTable[K] = {
+    def apply[K](sd: CompileTime[?,?,K]):PartialParsingTable[K] = {
         val parsing = new Parsing[K]
         parsing(sd)
     }

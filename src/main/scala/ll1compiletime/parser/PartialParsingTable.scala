@@ -5,6 +5,7 @@ import ParsingTable.{SymboleType,Nullable}
 import ll1compiletime.syntax.{Syntax, SyntaxDefinition}
 
 import scala.quoted._
+import ll1compiletime.syntax.CompileTime
 
 
 /**
@@ -46,7 +47,7 @@ class PartialParsingTable[Kind] (
      * @tparam Token the type of the Tokens used in parsing
      * @param sd the SyntaxDefinition which values are used to complete the partial table
      */
-    def withFunctionTable[A,Token](sd: SyntaxDefinition[A,Token,Kind]):ParsingTable[A,Token,Kind] = 
+    def withFunctionTable[A,Token](sd: CompileTime[A,Token,Kind]):ParsingTable[A,Token,Kind] = 
         require(entry == sd.entryPoint.id)
         withFunctionTable(sd.entryPoint,sd.getKind)
 }
