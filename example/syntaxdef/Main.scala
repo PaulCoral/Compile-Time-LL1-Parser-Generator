@@ -5,7 +5,7 @@ import MyToken._
 @main def hello: Unit =
     // parsing table constructed at runtime 
     // `withFunctionTable` provide the need runtime values
-    val parsingTable = getPartialParsingTable.withFunctionTable(SyntaxDef)
+    val parsingTable = SyntaxDef.parser
 
     val range = 1 to 5
     val head = range.head // 1

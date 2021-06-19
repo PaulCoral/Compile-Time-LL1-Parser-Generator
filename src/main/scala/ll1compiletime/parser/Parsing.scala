@@ -6,7 +6,7 @@ import ParsingTable.ParsingTableContext
 import ParsingTable.SymboleType
 import ParsingTable.ParsingTableContext._
 import ParsingTable.SymboleType._
-import ParsingTable.{Nullable,Leaf,Node}
+import ParsingTable.{Nullable,Leaf,Node,TransNullable}
 import Parsing._
 
 import scala.quoted._
@@ -167,7 +167,10 @@ private[ll1compiletime] class Parsing[Kind] {
                         // First
                         prop.first.addAll(child.first)
                         // Nullable
-                        prop.nullable = child.nullable
+                        prop.nullable = child.nullable.map{ i =>
+                            TransNullable(i,s.id)
+                        }
+
                         // Should-Not-Follow
                         prop.snf.addAll(child.snf)
                         // Conflict

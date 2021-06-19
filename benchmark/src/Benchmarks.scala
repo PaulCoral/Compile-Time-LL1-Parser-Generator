@@ -11,11 +11,12 @@ abstract class BenchmarkFiles extends Bench.OfflineReport {
 
   // Uncomment files from here.
   val files = Gen.enumeration("file")(
+    "normal-10k",
     "normal-100k",
-    //"normal-200k",
+    "normal-200k",
     //"normal-300k",
     //"normal-400k",
-    //"normal-500k",
+    "normal-500k",
     //"normal-600k",
     //"normal-700k",
     //"normal-800k",
@@ -36,10 +37,10 @@ class CompileTimeLL1 extends BenchmarkTokens {
     measure method "parsingTable and parser.apply" in {
       using(tokens) in { ts =>
         import ll1compiletime._
-        val parser = parsingTable.withFunctionTable(SyntaxDef)
+        val parser = SyntaxDef.parser
         assert(
           parser.apply(ts.iterator) match {
-            case ParsedSuccessfully(_) => true
+            case ParsingResult.ParsedSuccessfully(_) => true
             case _ => false
           }
         )
