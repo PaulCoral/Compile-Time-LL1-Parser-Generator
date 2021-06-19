@@ -110,7 +110,7 @@ class ParsingTable[A,Token,Kind] private[ll1compiletime](
                                 // new found syntax, value saved in new context
                                 parse(s2,c2,tokens,Some(t))
                         }
-                    case None => UnexpectedToken(getKind(t),getFirstSetOfSyntax(s)) // no match, not nullable
+                    case None => ParsingResult.UnexpectedToken(getKind(t),getFirstSetOfSyntax(s)) // no match, not nullable
 
                 }
             }
@@ -120,7 +120,7 @@ class ParsingTable[A,Token,Kind] private[ll1compiletime](
                         case Left(v2) => result(v2,Nil)
                         case Right((s2,c2)) => parse(s2,c2, Iterator.empty)
                     }
-                    case None => UnexpectedEnd(getFirstSetOfSyntax(s))
+                    case None => ParsingResult.UnexpectedEnd(getFirstSetOfSyntax(s))
 
                 }
         }
@@ -130,8 +130,8 @@ class ParsingTable[A,Token,Kind] private[ll1compiletime](
      * Return a successful parsing result
      */
     private def result(v: Any, tokens: List[Token]) = tokens match {
-        case Nil => ParsedSuccessfully(v)
-        case _ => ParsedSuccessfullyWithRest(v,tokens)
+        case Nil => ParsingResult.ParsedSuccessfully(v)
+        case _ => ParsingResult.ParsedSuccessfullyWithRest(v,tokens)
     }
 
     /**
