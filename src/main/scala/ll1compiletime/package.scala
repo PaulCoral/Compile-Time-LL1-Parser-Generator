@@ -21,13 +21,6 @@ type SyntaxDefinition[T,K] = ll1compiletime.syntax.SyntaxDefinition[T,K]
 type CompileTime[A,T,K] = ll1compiletime.syntax.CompileTime[A,T,K]
 
 /**
- * Give unique identifier
- * 
- * Should used as `given` in CompileTime syntax definition
- */
-type IdCounter = ll1compiletime.syntax.IdCounter
-
-/**
  * A pair of value
  * 
  * Used as infix type

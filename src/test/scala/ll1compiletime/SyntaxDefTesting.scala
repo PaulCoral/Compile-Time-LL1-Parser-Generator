@@ -38,7 +38,7 @@ trait SyntaxUtils extends SyntaxDefinition[MyToken,MyKind]{
     import MyKind._
     import MyToken._
     
-    given conv(using IdCounter):Conversion[Char,CSyntax[Token]] with {
+    given conv:Conversion[Char,CSyntax[Token]] with {
         def apply(c: Char) = c match {
             case '(' => elem(MyKind.ParK(true))
             case ')' => elem(MyKind.ParK(false))
