@@ -1,6 +1,6 @@
 package ll1compiletime.syntax
 
-import ll1compiletime.~
+
 import ll1compiletime.parser.PartialParsingTable
 import ll1compiletime.parser.ParsingTable
 
@@ -9,25 +9,19 @@ import scala.quoted.ToExpr
 /**
  * The trait to define a syntax
  * 
- * @tparam A the return type of the entry point
  * @tparam T the Token type
  * @tparam K the Kind type
  */
-trait SyntaxDefinition[A,T,K] {
-    /** the type of parsing Tokens */
-    type Token = T
-    /** the type of Kind of the parsing Tokens */
-    type Kind = K
+trait SyntaxDefinition[T,K] {
+    import ll1compiletime.~
 
     /** a given IdCounter that gives unique ids to Syntaxes */
     final given idc:IdCounter = new IdCounter
 
-    /**
-     * Type of a syntax in this context of [[SyntaxDefinition]]
-     * 
-     * @tparam X the return value of the syntax
-     */
-    type CSyntax[X] = Syntax[X,Token,Kind]
+    /** the type of parsing Tokens */
+    type Token = T
+    /** the type of Kind of the parsing Tokens */
+    type Kind = K
 
     /**
      * Return the Kind of a given Token
@@ -39,28 +33,17 @@ trait SyntaxDefinition[A,T,K] {
     def getKind(t: Token):Kind
 
     /**
-     * the macro call for the compile time analysis 
-     * and construction of the syntax
+     * Type of a syntax in this context of [[SyntaxDefinition]]
      * 
-     * @note should abslutely be an inline
+     * @tparam X the return value of the syntax
      */
-    inline def macroCall: PartialParsingTable[Kind]
+    type CSyntax[X] = Syntax[X,Token,Kind]
 
-    /**
-     * Return a parsing table corresponding to the defined syntax.
-     */
-    final inline def parser = macroCall.withFunctionTable(this)
 
-    /**
-     * The top level syntax, where the parsing begin.
-     */
-    lazy val entryPoint: CSyntax[A]
 
     /* --- Syntax Context : we restrain the context of the syntax for these Token `T` and kind `K` --- */
 
-
     extension [X](thiz: CSyntax[X]) {
-
         /**
          * Syntax Disjunction operator
          * 

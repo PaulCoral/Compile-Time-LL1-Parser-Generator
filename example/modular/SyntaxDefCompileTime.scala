@@ -1,4 +1,4 @@
-package example.syntaxdef
+package example.modular
 
 import ll1compiletime._
 

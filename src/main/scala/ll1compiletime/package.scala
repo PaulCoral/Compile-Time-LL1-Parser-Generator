@@ -11,7 +11,21 @@ package ll1compiletime
  * @tparam T the Token type
  * @tparam K the Kind type
  */
-type SyntaxDefinition[A,T,K] = ll1compiletime.syntax.SyntaxDefinition[A,T,K]
+type SyntaxDefinition[T,K] = ll1compiletime.syntax.SyntaxDefinition[T,K]
+
+/**
+ * Define a syntax that will be analyzed at compile time
+ * 
+ * @see [[ll1compiletime.syntax.SyntaxDefinition]] for detail
+ */
+type CompileTime[A,T,K] = ll1compiletime.syntax.CompileTime[A,T,K]
+
+/**
+ * Give unique identifier
+ * 
+ * Should used as `given` in CompileTime syntax definition
+ */
+type IdCounter = ll1compiletime.syntax.IdCounter
 
 /**
  * A pair of value
@@ -45,4 +59,4 @@ def ~[C](next: C): (A ~ B) ~ C = new ~(this, next)
  * @param sd the syntax definition
  * @return the partial parsing table created by the Parsing object
  */
-def buildParsingTable[K](parser: SyntaxDefinition[?,?,K]) = ll1compiletime.parser.Parsing(parser)
+def buildParsingTable[K](parser: CompileTime[?,?,K]) = ll1compiletime.parser.Parsing(parser)
