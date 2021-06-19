@@ -1,6 +1,6 @@
-package syntaxdef
+package modular
 
-import example.syntaxdef._
+import example.modular._
 import MyToken._
 
 /** the main function */

@@ -14,7 +14,7 @@ private inline def parsingTable = ${init}
 
 private def init(using Quotes) = Expr(buildParsingTable(SyntaxDef))
 
-object SyntaxDef extends ll1compiletime.syntax.CompileTime[json.Value,json.Token,json.TokenClass]{
+object SyntaxDef extends CompileTime[Value,Token,TokenClass] with SyntaxDefinition[Token,TokenClass]{
     override def getKind(token: Token): TokenClass = token match {
         case SeparatorToken(value, _) => SeparatorClass(value)
         case BooleanToken(_, _) => BooleanClass

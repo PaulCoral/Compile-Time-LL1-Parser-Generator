@@ -11,7 +11,7 @@ package ll1compiletime
  * @tparam T the Token type
  * @tparam K the Kind type
  */
-type SyntaxDefinition[A,T,K] = ll1compiletime.syntax.SyntaxDefinition[A,T,K]
+type SyntaxDefinition[T,K] = ll1compiletime.syntax.SyntaxDefinition[T,K]
 
 /**
  * Define a syntax that will be analyzed at compile time
@@ -19,6 +19,13 @@ type SyntaxDefinition[A,T,K] = ll1compiletime.syntax.SyntaxDefinition[A,T,K]
  * @see [[ll1compiletime.syntax.SyntaxDefinition]] for detail
  */
 type CompileTime[A,T,K] = ll1compiletime.syntax.CompileTime[A,T,K]
+
+/**
+ * Give unique identifier
+ * 
+ * Should used as `given` in CompileTime syntax definition
+ */
+type IdCounter = ll1compiletime.syntax.IdCounter
 
 /**
  * A pair of value

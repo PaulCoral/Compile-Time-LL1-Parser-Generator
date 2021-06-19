@@ -1,6 +1,6 @@
 package ll1compiletime.syntax
 
-import ll1compiletime.~
+
 import ll1compiletime.parser.PartialParsingTable
 import ll1compiletime.parser.ParsingTable
 
@@ -9,15 +9,28 @@ import scala.quoted.ToExpr
 /**
  * The trait to define a syntax
  * 
- * @tparam A the return type of the entry point
  * @tparam T the Token type
  * @tparam K the Kind type
  */
-trait SyntaxDefinition[A,T,K] {
+trait SyntaxDefinition[T,K] {
+    import ll1compiletime.~
+
+    /** a given IdCounter that gives unique ids to Syntaxes */
+    final given idc:IdCounter = new IdCounter
+
     /** the type of parsing Tokens */
     type Token = T
     /** the type of Kind of the parsing Tokens */
     type Kind = K
+
+    /**
+     * Return the Kind of a given Token
+     * 
+     * @param t the given Token
+     * 
+     * @return the Kind corresponding to the token
+     */
+    def getKind(t: Token):Kind
 
     /**
      * Type of a syntax in this context of [[SyntaxDefinition]]
@@ -27,11 +40,10 @@ trait SyntaxDefinition[A,T,K] {
     type CSyntax[X] = Syntax[X,Token,Kind]
 
 
+
     /* --- Syntax Context : we restrain the context of the syntax for these Token `T` and kind `K` --- */
 
-
     extension [X](thiz: CSyntax[X]) {
-
         /**
          * Syntax Disjunction operator
          * 
