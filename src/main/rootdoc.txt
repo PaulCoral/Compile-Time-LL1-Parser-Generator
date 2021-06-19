@@ -25,6 +25,7 @@ See the [[ll1compiletime.syntax.SyntaxDefinition operators]]
     /* some file where parsing occures */
 
     val parser = SyntaxDef.parser
+    parser(tokens)
 
 }}}
 
@@ -38,7 +39,7 @@ See the [[ll1compiletime.syntax.SyntaxDefinition operators]]
     private def init(using Quotes) = Expr(buildParsingTable(SyntaxDef))
 
     /* syntax defintion */
-    object SyntaxDef extends SyntaxDefinition[Int,MyToken,MyKind] {
+    object SyntaxDef extends CompileTime[Int,MyToken,MyKind] with SyntaxDefinition[MyToken,MyKind]{
         // syntax defintion
 
         // important : INLINE
