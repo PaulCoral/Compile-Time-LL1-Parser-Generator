@@ -17,7 +17,7 @@ More modular examples are provided here [example/modular](https://github.com/Pau
 
 ⚠️ The syntax definition and the macro call and implementation have to be in a single file to avoid compilation issues.
 
-An easy way to get started is by using SBT (here v1.5.3), `sbt new scala/scala3.g8` and adding the library jar file to a directory in the project `lib/`-
+An easy way to get started is by using SBT (here v1.5.3), `sbt new scala/scala3.g8` and adding the [library jar file](https://github.com/PaulCoral/Compile-Time-LL1-Parser/releases/tag/v0.1.0) to a directory in the project `lib/`.
 
 Also, please find the API documentation documentation [here](https://paulcoral.github.io/Compile-Time-LL1-Parser/).
 
