@@ -48,7 +48,10 @@ class PartialParsingTable[Kind] (
      * @param sd the SyntaxDefinition which values are used to complete the partial table
      */
     private[ll1compiletime] def withFunctionTable[A,Token](sd: CompileTime[A,Token,Kind]):ParsingTable[A,Token,Kind] = 
-        require(entry == sd.entryPoint.id, "Runtime and compile time syntax differ")
+        require(
+            entry == sd.entryPoint.id, 
+            "Runtime and compile time syntax differ. ! Clean the build one fixed, you might not see the effect otherwise !"
+        )
         withFunctionTable(sd.entryPoint,sd.getKind)
 }
 
