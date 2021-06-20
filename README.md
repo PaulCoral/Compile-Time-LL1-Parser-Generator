@@ -15,10 +15,11 @@ The advantages of this parser are:
 An example is provided in [example/syntaxdef](https://github.com/PaulCoral/Compile-Time-LL1-Parser/tree/master/example/syntaxdef).
 More modular examples are provided here [example/modular](https://github.com/PaulCoral/Compile-Time-LL1-Parser/tree/master/example/modular) or also in the [tests](https://github.com/PaulCoral/Compile-Time-LL1-Parser/tree/master/src/test/scala/ll1compiletime).
 
-⚠️ The syntax definition and the macro call and implementation have to be in a single file to avoid compilation issues ⚠️.
+⚠️ The syntax definition and the macro call and implementation have to be in a single file to avoid compilation issues.
 
 An easy way to get started is by using SBT (here v1.5.3), `sbt new scala/scala3.g8` and adding the library jar file to a directory in the project `lib/`-
 
+Also, please find the API documentation documentation [here](https://paulcoral.github.io/Compile-Time-LL1-Parser/).
 
 ### Extras
 
