@@ -7,7 +7,6 @@ package ll1compiletime
  * @note this type definition is so that be have only to import
  * `ll1compiletime._`
  * 
- * @tparam A the return type of the entry point
  * @tparam T the Token type
  * @tparam K the Kind type
  */
