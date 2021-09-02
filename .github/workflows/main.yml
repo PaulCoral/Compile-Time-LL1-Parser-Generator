@@ -9,6 +9,8 @@ jobs:
     steps:
       - uses: actions/checkout@v2 # Retrieve the content of the repository
       - uses: olafurpg/setup-scala@v12 # Set up a jdk and sbt
+      
+      
       - name: test
         if: success()
         run: sbt test
@@ -29,4 +31,22 @@ jobs:
           build_dir: public
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: publicdir
+        if: success()
+        run: |
+          sbt package
+          jar_path=$(find ./target/ -name *.jar)
+          cp $jar_path .
+      
+      - name : realease
+        if: success()
+        uses: "marvinpinto/action-automatic-releases@latest"
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: "latest"
+          prerelease: true
+          title: "Development Build"
+          files: |
+            *.jar
   
