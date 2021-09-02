@@ -10,8 +10,8 @@ construction can be done at compile time using macros.
 The library itself does not contain compile time code, but it is designed
 to be used with Scala 3 macros without any issue.
 
-To use it you should put the following things in **A SINGLE FILE**, so
-that it can be used with macros
+:warning: To use it you should put the following things in **A SINGLE FILE and in an OBJECT** (see example bellow), so
+that it can be used with macros.
 
 - `import ll1compiletime._`
 - A macro call (inlined macro call + macro definition itself) 
@@ -31,18 +31,20 @@ See the [[ll1compiletime.syntax.SyntaxDefinition operators]]
 
 {{{
     /* Syntax definition file */
+    object MyParser: 
+        // putting in an object improve instant feedback
 
-    /* macro inlined call */
-    private inline def getPartialParsingTable = ${init}
+        /* macro inlined call */
+        private inline def getPartialParsingTable = ${init}
 
-    /* macro definition */
-    private def init(using Quotes) = Expr(buildParsingTable(SyntaxDef))
+        /* macro definition */
+        private def init(using Quotes) = Expr(buildParsingTable(SyntaxDef))
 
-    /* syntax defintion */
-    object SyntaxDef extends CompileTime[Int,MyToken,MyKind] with SyntaxDefinition[MyToken,MyKind]{
-        // syntax defintion
+        /* syntax defintion */
+        object SyntaxDef extends CompileTime[Int,MyToken,MyKind] with SyntaxDefinition[MyToken,MyKind]:
+            // Write syntax defintion here
 
-        // important : INLINE
-        inline def macroCall = getPartialParsingTable
-    }
+            // important : INLINE
+            inline def macroCall = getPartialParsingTable
+        
 }}}

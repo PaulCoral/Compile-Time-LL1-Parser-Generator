@@ -5,6 +5,17 @@ import ll1compiletime._
 import scala.quoted._
 import scala.language.implicitConversions
 import ll1compiletime.parser.PartialParsingTable
+import javax.print.attribute.standard.MediaSize.Other
+
+
+/*
+ * This is a modular version of the other example. The idea is to reuse or mix
+ * multiple syntax definition to avoid code duplication
+ */
+
+// ==============================================================================
+// ==============================================================================
+// ==============================================================================
 
 /*
  * !!! READ THIS !!! 
@@ -15,7 +26,6 @@ import ll1compiletime.parser.PartialParsingTable
  * THE SYNTAX DEFINITION OBJECT SHOULD NOT CALL THE MACRO FUNCTION, AS A MACRO
  * CANNOT BE CALLED IN THE SAME FILE IT IS DEFINED.
  */
-
 
 /**
  * Give the partial parsing table at compile time
@@ -36,13 +46,9 @@ private def init(using Quotes):Expr[PartialParsingTable[SyntaxDef.Kind]] = {
  * - Token of type `MyToken`
  * - Kind of tpye `MyKind`
  */
-object SyntaxDef extends CompileTime[Int,MyToken,MyKind] with SyntaxDefinition[MyToken,MyKind] {
+trait SomeSyntax extends SyntaxDefinition[MyToken,MyKind] {
     import MyToken._
     import MyKind._
-
-    def getKind(t:MyToken):MyKind = MyKind.getKind(t)
-
-    inline def macroCall:PartialParsingTable[Kind] = getPartialParsingTable
 
     given Conversion[Char,CSyntax[Token]] with {
         def apply(c: Char) = elem(SeparatorKind)
@@ -52,8 +58,6 @@ object SyntaxDef extends CompileTime[Int,MyToken,MyKind] with SyntaxDefinition[M
 
     lazy val elemInt: CSyntax[Int] = accept(IntKind){ case IntLitToken(v) => v }
 
-    lazy val eof: CSyntax[Int] = accept(EOFKind){ case EOFToken => 0 }
-
     lazy val rec_sum: CSyntax[Int ~ Int] = (elemInt ~ sum)
 
     lazy val rec_sum_map: CSyntax[Int] = rec_sum.map{
@@ -61,9 +65,23 @@ object SyntaxDef extends CompileTime[Int,MyToken,MyKind] with SyntaxDefinition[M
     }
 
     lazy val sum: CSyntax[Int] = repsep(elemInt,',').map(_.sum)
+}
 
-    // --------------------------------------------
 
-    // Uncomment to get a LL1 Nullable error
-    lazy val entryPoint = sum ~<~ elem(EOFKind) // | epsilon(1) | epsilon(0) 
+trait OtherSyntax extends SyntaxDefinition[MyToken,MyKind] {
+    import MyToken._
+    import MyKind._
+
+    val eof = elem(EOFKind)
+}
+
+object SyntaxDef extends CompileTime[Int,MyToken,MyKind] with SomeSyntax with OtherSyntax {
+    import MyToken._
+    import MyKind._
+
+    def getKind(t:MyToken):MyKind = MyKind.getKind(t)
+
+    inline def macroCall:PartialParsingTable[Kind] = getPartialParsingTable
+
+    lazy val entryPoint = sum ~<~ eof
 }
