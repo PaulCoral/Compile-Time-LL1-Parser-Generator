@@ -57,6 +57,18 @@ trait SyntaxDefinition[T,K] {
             thiz.|(that)
 
         /**
+         * Syntax Disjunction operator
+         * 
+         * Returns a new syntax which is the disjunction of syntaxes `thiz`
+         * and `that`
+         * 
+         * @param thiz a sytnax of the disjunction
+         * @param that the other syntax of the disjunction
+         */
+        infix def ||[B](that: CSyntax[B])(using IdCounter):CSyntax[Either[X,B]] = 
+            (thiz.map(Left(_))) | (that.map(Right(_)))
+
+        /**
          * Syntax Sequence operator
          * 
          * Returns a new syntax which is the sequence of syntaxes `thiz`
