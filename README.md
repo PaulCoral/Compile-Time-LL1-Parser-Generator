@@ -2,7 +2,7 @@
 ## LL(1) Parser with Compile Time Capabilities
 
 ### Description
-In my bachelor project at the **LARA** lab at EPFL, I built a LL(1) parser generator with compile time capabilities based on the [Scall1on](https://github.com/epfl-lara/scallion) parser. It allows the user to define a syntax based on combinators, and construct a parsing table mostly at compile time. Some work has to be done at runtime, as some datatype are not well supported by macro, so either the user has to handle each custom type, or it is not possible get them out of the macro context.
+In my bachelor semester project (spring 2021) at the **LARA** lab at EPFL, I built a LL(1) parser generator with compile time capabilities based on the [Scall1on](https://github.com/epfl-lara/scallion) parser. It allows the user to define a syntax based on combinators, and construct a parsing table mostly at compile time. Some work has to be done at runtime, as some datatype are not well supported by macro, so either the user has to handle each custom type, or it is not possible get them out of the macro context.
 
 The advantages are:
 - Shorter runtime setup time (only one traversal of the syntax definition)
