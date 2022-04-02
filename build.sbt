@@ -5,7 +5,15 @@ val commonSettings = Seq(
   scalaVersion       := scala3Version,
 )
 
-lazy val root = project
+lazy val root = project.in(file(".")).
+  aggregate(foo.js, foo.jvm).
+  settings(
+    publish := {},
+    publishLocal := {},
+  )
+
+
+lazy val foo = crossProject(JSPlatform,JVMPlatform)
   .in(file("."))
   .settings(
     commonSettings,
@@ -17,6 +25,9 @@ lazy val root = project
     Compile / doc / scalacOptions ++= {
         Seq("-doc-root-content", (Compile / sourceDirectory).value + "/rootdoc.txt")
     },
+  ).jsSettings(
+      scalaJSUseMainModuleInitializer := true,
+      scalaJSLinkerConfig ~= { _.withModuleKind(ModuleKind.ESModule) }
   )
 
 lazy val example = Project("example", file("example"))
