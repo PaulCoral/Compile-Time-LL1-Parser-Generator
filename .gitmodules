@@ -1,0 +1,3 @@
+[submodule "silex"]
+	path = silex
+	url = git@github.com:epfl-lara/silex.git
