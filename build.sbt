@@ -5,7 +5,9 @@ val commonSettings = Seq(
   scalaVersion       := scala3Version,
 )
 
-lazy val root = project
+lazy val root = ll1parser
+
+lazy val ll1parser = project
   .in(file("."))
   .settings(
     commonSettings,
