@@ -9,9 +9,7 @@ import ParsingTable.SymboleType._
 import ParsingTable.{Nullable,Leaf,Node,TransNullable}
 import Parsing._
 
-import scala.quoted._
 import scala.collection.mutable.{Set,Map,Queue}
-import scala.annotation.tailrec
 
 private[ll1compiletime] class Parsing[Kind] {
     private val ready = Queue[Int]()
@@ -339,6 +337,7 @@ private[ll1compiletime] object Parsing {
     /**
      * Properties of the given syntax
      */
+    
     private case class Properties[Kind](syntax: Syntax[Any,?,Kind]){
         val first: Set[Kind] = Set()
         val snf: Set[Kind] = Set()
