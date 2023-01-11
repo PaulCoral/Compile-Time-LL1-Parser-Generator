@@ -2,7 +2,7 @@
 package ll1compiletime.parser
 
 import ParsingTable.{SymboleType,Nullable}
-import ll1compiletime.syntax.{Syntax, SyntaxDefinition}
+import ll1compiletime.syntax.{Syntax}
 
 import scala.quoted._
 import ll1compiletime.syntax.CompileTime

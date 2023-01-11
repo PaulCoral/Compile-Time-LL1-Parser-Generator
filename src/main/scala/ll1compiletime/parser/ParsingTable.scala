@@ -2,7 +2,6 @@ package ll1compiletime.parser
 
 
 import scala.quoted._
-import scala.quoted.ToExpr._
 import scala.annotation.tailrec
 
 import ll1compiletime._
@@ -75,7 +74,7 @@ class ParsingTable[A,Token,Kind] private[ll1compiletime](
         }
         opt match {
             case Some(t) => {
-                locate(t,s,c) match {
+                locate(t,s) match {
                     case Some(Right(instr)) => 
                         // token kind matched
                         instr match {
@@ -138,7 +137,7 @@ class ParsingTable[A,Token,Kind] private[ll1compiletime](
      * Return either a produced or the next instruction from a token,
      * a syntax id, and a context
      */
-    private def locate(t: Token, s: Int, c: Context): Option[Either[Any, Instruction]] =
+    private def locate(t: Token, s: Int): Option[Either[Any, Instruction]] =
         table.get((s,getKind(t))) match {
             case Some(instr) => Some(Right(instr))
             case None => // No Kind match this syntax

@@ -52,9 +52,6 @@ trait SyntaxUtils extends SyntaxDefinition[MyToken,MyKind]{
 }
 
 object P1 {
-    import MyKind._
-    import MyToken._
-
     private inline def parsingTable = ${init}
 
     private def init(using Quotes) = Expr(buildParsingTable(SyntaxDefTesting))
@@ -78,8 +75,6 @@ object P1 {
 }
 
 object P2 {
-    import MyKind._
-    import MyToken._
 
     private inline def parsingTable = ${init}
 

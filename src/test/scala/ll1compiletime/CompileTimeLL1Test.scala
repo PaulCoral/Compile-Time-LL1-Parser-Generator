@@ -3,8 +3,6 @@ package ll1compiletime
 import org.scalatest._
 import org.scalatest.flatspec.AnyFlatSpec
 
-import scala.quoted._
-
 
 class TestP1 extends AnyFlatSpec {
     import MyToken._

@@ -1,10 +1,7 @@
 package ll1compiletime.syntax
 
 
-import ll1compiletime.parser.PartialParsingTable
-import ll1compiletime.parser.ParsingTable
-
-import scala.quoted.ToExpr
+import annotation.unused
 
 /**
  * The trait to define a syntax
@@ -53,7 +50,7 @@ trait SyntaxDefinition[T,K] {
          * @param thiz a sytnax of the disjunction
          * @param that the other syntax of the disjunction
          */
-        infix def |(that: CSyntax[X])(using IdCounter):CSyntax[X] = 
+        infix def |(that: CSyntax[X])(using @unused ic:IdCounter):CSyntax[X] = 
             thiz.|(that)
 
         /**
@@ -65,7 +62,7 @@ trait SyntaxDefinition[T,K] {
          * @param thiz a sytnax of the disjunction
          * @param that the other syntax of the disjunction
          */
-        infix def ||[B](that: CSyntax[B])(using IdCounter):CSyntax[Either[X,B]] = 
+        infix def ||[B](that: CSyntax[B])(using @unused e:IdCounter):CSyntax[Either[X,B]] = 
             (thiz.map(Left(_))) | (that.map(Right(_)))
 
         /**
